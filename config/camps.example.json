@@ -1,0 +1,20 @@
+{
+  "organisation": "Pfadi Rhenania",
+  "camps": [
+    {
+      "slug": "sola-27",
+      "name": "Sola 27",
+      "kind": "Sommerlager",
+      "start": "2027-07-19",
+      "end": "2027-07-31",
+      "drive": {
+        "rootFolderId": "ID_DES_LAGERORDNERS",
+        "termineFileId": "ID_VON_LAGERDATEN_XLSX",
+        "tnFileId": "ID_DER_TN_LISTE_ODER_DES_ORDNERS",
+        "leiterFileId": "ID_DER_LEITERLISTE_ODER_DES_ORDNERS"
+      },
+      "ecampCampId": "ID_AUS_DER_ECAMP_URL",
+      "writeBack": true
+    }
+  ]
+}

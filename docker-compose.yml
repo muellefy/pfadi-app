@@ -1,0 +1,29 @@
+services:
+  app:
+    build: .
+    image: pfadi-app:latest
+    restart: unless-stopped
+    env_file: .env
+    ports:
+      - "${PORT:-3000}:3000"
+    volumes:
+      # camps are configured here — edit and reload, no rebuild needed
+      - ./config/camps.json:/app/config/camps.json:ro
+
+  # Optional: automatic HTTPS with Caddy.
+  # Start with `docker compose --profile https up -d` and set DOMAIN in .env
+  # (and AUTH_URL=https://<DOMAIN>).
+  caddy:
+    image: caddy:2-alpine
+    profiles: ["https"]
+    restart: unless-stopped
+    depends_on: [app]
+    ports:
+      - "80:80"
+      - "443:443"
+    command: caddy reverse-proxy --from ${DOMAIN:-localhost} --to app:3000
+    volumes:
+      - caddy_data:/data
+
+volumes:
+  caddy_data:

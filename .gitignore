@@ -1,0 +1,10 @@
+node_modules
+.next
+out
+.env
+.env.*
+!.env.example
+config/camps.json
+*.tsbuildinfo
+next-env.d.ts
+.DS_Store
