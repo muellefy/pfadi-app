@@ -1,0 +1,32 @@
+{
+  "autoMode": {
+    "allow": [
+      "$defaults",
+      "Read-only git and GitHub operations (status, log, diff, show, fetch; gh pr/issue/run/release list, view, diff, checks).",
+      "Local builds and checks: npm ci/typecheck/build in a node:22-alpine container, docker build, docker run of locally built images, actionlint, renovate-config-validator.",
+      "Pushing non-default branches to origin and opening pull requests (gh pr create)."
+    ],
+    "soft_deny": [
+      "$defaults",
+      "Merging pull requests (gh pr merge) — every merge to main triggers a push of lostiboy7/pfadi-app:develop to Docker Hub.",
+      "Pushing directly to main.",
+      "Creating tags or GitHub releases (gh release create, git push of tags) — a published release pushes a new :<tag> and :latest to Docker Hub.",
+      "docker push to Docker Hub (lostiboy7/*).",
+      "Changing repository secrets, variables or settings (gh secret set, gh variable set, gh repo edit)."
+    ],
+    "hard_deny": [
+      "$defaults",
+      "Force-pushing to main, deleting the main branch, or rewriting published history on main.",
+      "Deleting the GitHub repository, the Docker Hub repository, published releases or published image tags.",
+      "Committing or baking secrets into the image: .env, config/camps.json, Google/NextAuth credentials, Docker Hub tokens, or the corporate CA bundle."
+    ],
+    "environment": [
+      "$defaults",
+      "This is pfadi-app (GitHub muellefy/pfadi-app): a Next.js 15 / TypeScript Lagerplaner for a Pfadi (scout) group, combining eCamp and Google Drive with Google login (next-auth). Deployed via Docker Compose.",
+      "Docker image: lostiboy7/pfadi-app on Docker Hub. .github/workflows/docker.yml pushes :develop on every push to main that touches image files, and :<release-tag> + :latest when a GitHub release is published (pre-releases do not move :latest).",
+      "Dependencies are updated by Renovate (renovate.json): weekly, minor/patch grouped, no automerge. There is no CI test job on PRs — local checks (typecheck, build, docker build) are the only pre-merge signal.",
+      "The developer machine sits behind a TLS-intercepting Zscaler proxy. npm/npx are not installed on the host; run Node tooling in a node:22-alpine container with --network=host, the *_PROXY env vars, and NODE_EXTRA_CA_CERTS pointing at a read-only mount of /etc/ssl/certs/ca-certificates.crt. For docker build pass the bundle as --secret id=ca,src=/etc/ssl/certs/ca-certificates.crt (never COPY it into the image).",
+      "ACCESS POLICY: reading and local building are always fine. Anything that publishes (merges to main, releases, tags, Docker Hub pushes, repo secrets/settings) must be confirmed by the user first."
+    ]
+  }
+}
