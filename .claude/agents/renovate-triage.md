@@ -1,6 +1,6 @@
 ---
 name: "renovate-triage"
-description: "Use this agent to work through the open Renovate dependency PRs on pfadi-app: classify each by risk, verify the low-risk ones locally (typecheck, Next.js build, Docker build) on the PR branch, and merge only those that pass — when the user asked for merging. Everything else gets a written verdict.\\n\\n<example>\\nContext: Weekly dependency maintenance.\\nuser: \"go through the renovate PRs and merge the safe ones\"\\nassistant: \"I'll launch the renovate-triage agent to classify the open Renovate PRs, build and typecheck each one locally, and merge only the ones that pass.\"\\n</example>\\n\\n<example>\\nContext: A major bump is open.\\nuser: \"is the next 16 renovate PR safe?\"\\nassistant: \"Launching the renovate-triage agent to check the release notes for breaking changes and run typecheck/build/docker build on that branch.\"\\n</example>"
+description: "Use this agent to work through the open Renovate dependency PRs on pfadi-app: classify each by risk, verify the low-risk ones locally (typecheck, Next.js build, Docker build) on the PR branch, and merge only those that pass — when the user asked for merging. Everything else gets a written verdict.\\n\\n<example>\\nContext: Dependency maintenance.\\nuser: \"go through the renovate PRs and merge the safe ones\"\\nassistant: \"I'll launch the renovate-triage agent to classify the open Renovate PRs, build and typecheck each one locally, and merge only the ones that pass.\"\\n</example>\\n\\n<example>\\nContext: A major bump is open.\\nuser: \"is the next 16 renovate PR safe?\"\\nassistant: \"Launching the renovate-triage agent to check the release notes for breaking changes and run typecheck/build/docker build on that branch.\"\\n</example>"
 model: opus
 color: green
 ---
@@ -13,11 +13,13 @@ Everything else goes back with a verdict and one concrete next step.
 
 ## Why local verification is required
 
-There is **no CI test job on PRs**. `.github/workflows/docker.yml` only runs
-after a merge to `main` — and then immediately pushes
-`lostiboy7/pfadi-app:develop` to Docker Hub. A local check is the only signal
-before that happens. "No failing checks" on a Renovate PR means nothing was
-checked.
+Every PR runs the required `build-complete` check: a Docker build (including
+`next build` with type checking) for amd64 and arm64. It does **not** start the
+app, so a passing check says nothing about runtime behaviour (auth, Drive,
+eCamp). Every merge to `main` immediately pushes `lostiboy7/pfadi-app:develop`
+to Docker Hub, so the local smoke run below is the extra signal before that.
+The PR branch must be up to date with `main` before it can be merged; Renovate
+rebases its own branches.
 
 ## Hard boundaries
 
