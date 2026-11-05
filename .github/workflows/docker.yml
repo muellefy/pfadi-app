@@ -17,22 +17,10 @@ on:
       - lib/**
       - config/camps.example.json
       - .github/workflows/docker.yml
-  # PRs (incl. Renovate): build both architectures as a check, push nothing
+  # Every PR (incl. Renovate) builds both architectures as a check and pushes
+  # nothing. No path filter: the required "build-complete" check must always report.
   pull_request:
     branches: [main]
-    paths:
-      - Dockerfile
-      - .dockerignore
-      - package.json
-      - package-lock.json
-      - next.config.ts
-      - tsconfig.json
-      - "*.ts"
-      - app/**
-      - components/**
-      - lib/**
-      - config/camps.example.json
-      - .github/workflows/docker.yml
   # Published GitHub release -> :<release-tag> and :latest
   release:
     types: [published]
@@ -153,3 +141,14 @@ jobs:
 
       - name: Inspect
         run: docker buildx imagetools inspect "${{ env.IMAGE }}:${{ steps.meta.outputs.version }}"
+
+  # Single required status check for branch protection (ruleset "protect main").
+  build-complete:
+    if: always()
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: All builds succeeded
+        run: |
+          echo "build: ${{ needs.build.result }}"
+          test "${{ needs.build.result }}" = success
