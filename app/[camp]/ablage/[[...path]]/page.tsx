@@ -2,18 +2,11 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getCamp } from "@/lib/config";
 import { getItem, listChildren, parseRessort, type DriveItem } from "@/lib/drive";
+import { AblageView } from "@/components/AblageView";
 import { ErrorNotice } from "@/components/Bits";
-import { Avatar, External, FileIcon, Folder, Sheet } from "@/components/icons";
+import { Avatar, External } from "@/components/icons";
 
 export const metadata = { title: "Ablage" };
-
-function Icon({ item }: { item: DriveItem }) {
-  if (item.isFolder) return <Folder />;
-  if (/sheet|csv|excel/.test(item.mimeType)) return <Sheet />;
-  return <FileIcon />;
-}
-
-const fmtSize = (n?: number) => (n == null ? "" : n > 1e6 ? `${(n / 1e6).toFixed(1)} MB` : `${Math.max(1, Math.round(n / 1e3))} kB`);
 
 export default async function AblagePage({ params }: { params: Promise<{ camp: string; path?: string[] }> }) {
   const { camp: slug, path = [] } = await params;
@@ -24,9 +17,18 @@ export default async function AblagePage({ params }: { params: Promise<{ camp: s
   const folderId = path.at(-1) ?? camp.drive.rootFolderId;
   let items: DriveItem[] = [];
   let crumbs: DriveItem[] = [];
+  let folder: DriveItem | undefined;
   let error = "";
   try {
-    [items, crumbs] = await Promise.all([listChildren(folderId), Promise.all(path.map(getItem))]);
+    // the root folder isn't in the crumbs, so fetch it separately for its permissions
+    const [children, chain, root] = await Promise.all([
+      listChildren(folderId),
+      Promise.all(path.map(getItem)),
+      path.length ? undefined : getItem(folderId),
+    ]);
+    items = children;
+    crumbs = chain;
+    folder = root ?? chain.at(-1);
   } catch (e) {
     error = e instanceof Error ? e.message : String(e);
   }
@@ -53,31 +55,8 @@ export default async function AblagePage({ params }: { params: Promise<{ camp: s
       </nav>
       {error ? (
         <ErrorNotice error={error} />
-      ) : items.length === 0 ? (
-        <div className="notice">Dieser Ordner ist leer.</div>
       ) : (
-        <div className="card" style={{ padding: "6px 12px" }}>
-          <table className="files">
-            <tbody>
-              {items.map((it) => (
-                <tr key={it.id}>
-                  <td>
-                    {it.isFolder ? (
-                      <Link href={`/${slug}/ablage/${[...path, it.id].join("/")}`}><Icon item={it} /><span>{it.name}</span></Link>
-                    ) : (
-                      <a href={it.webViewLink} target="_blank" rel="noreferrer"><Icon item={it} /><span>{it.name}</span></a>
-                    )}
-                  </td>
-                  <td className="small muted" style={{ whiteSpace: "nowrap" }}>{it.modifiedBy}</td>
-                  <td className="small muted" style={{ whiteSpace: "nowrap" }}>
-                    {it.modifiedTime && new Date(it.modifiedTime).toLocaleDateString("de-CH")}
-                  </td>
-                  <td className="small muted" style={{ textAlign: "right" }}>{fmtSize(it.size)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <AblageView slug={slug} path={path} folderId={folderId} items={items} canUpload={Boolean(folder?.canAddChildren)} />
       )}
     </>
   );
