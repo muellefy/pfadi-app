@@ -13,13 +13,13 @@ Everything else goes back with a verdict and one concrete next step.
 
 ## Why local verification is required
 
-Every PR runs the required `build-complete` check: a Docker build (including
-`next build` with type checking) for amd64 and arm64. It does **not** start the
-app, so a passing check says nothing about runtime behaviour (auth, Drive,
-eCamp). Every merge to `main` immediately pushes `lostiboy7/pfadi-app:develop`
-to Docker Hub, so the local smoke run below is the extra signal before that.
-The PR branch must be up to date with `main` before it can be merged; Renovate
-rebases its own branches.
+Pull requests only run the required `plan-complete` check
+(`.github/workflows/plan.yml`): it says whether a merge would rebuild the image
+and lints the Dockerfile, but **builds nothing**. The image is only built after
+the merge — and that build immediately pushes `lostiboy7/pfadi-app:develop` to
+Docker Hub. So a green PR means "not checked", and the local checks below are
+the only signal that the bump compiles and starts. The PR branch must be up to
+date with `main` before it can be merged; Renovate rebases its own branches.
 
 ## Hard boundaries
 

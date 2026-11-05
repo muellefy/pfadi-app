@@ -1,0 +1,66 @@
+name: Plan
+
+# Runs on every pull request and only reports what a merge would do to the
+# Docker image — nothing is built or pushed here. The actual build happens in
+# docker.yml after the merge. "plan-complete" is the required status check of
+# the "protect main" ruleset, so this workflow must not use a path filter.
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: plan-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  plan-complete:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Detect image changes
+        id: changes
+        env:
+          BASE: ${{ github.event.pull_request.base.sha }}
+          # Same paths as the push trigger in docker.yml
+          IMAGE_PATHS: >-
+            Dockerfile .dockerignore package.json package-lock.json
+            next.config.ts tsconfig.json *.ts app/** components/** lib/**
+            public/** config/camps.example.json
+        run: |
+          read -ra pathspecs <<< "$IMAGE_PATHS"
+          # ':(glob)' gives the same matching as GitHub's path filter:
+          # '*' stays within one directory, '**' crosses directories.
+          globbed=()
+          for p in "${pathspecs[@]}"; do globbed+=(":(glob)$p"); done
+          mapfile -t changed < <(git diff --name-only "$BASE"...HEAD -- "${globbed[@]}")
+
+          {
+            echo "## Docker image plan"
+            echo
+            if [ "${#changed[@]}" -gt 0 ]; then
+              echo "**On merge: rebuild and push \`lostiboy7/pfadi-app:develop\`** (linux/amd64 + linux/arm64)."
+              echo
+              echo "Image-relevant changes:"
+              echo
+              # shellcheck disable=SC2016  # backticks are Markdown, not a command
+              printf -- '- `%s`\n' "${changed[@]}"
+            else
+              echo "**On merge: no image build** — none of the changed files end up in the image."
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          if [ "${#changed[@]}" -gt 0 ]; then
+            echo "image=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "image=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Check Dockerfile
+        if: steps.changes.outputs.image == 'true'
+        run: docker build --check .

@@ -1,7 +1,10 @@
 name: Docker image
 
+# Builds and pushes the image only after a merge or a release. Pull requests
+# get the "Plan" workflow (plan.yml) instead, which shows what a merge would do.
 on:
-  # Merged PRs land as pushes on main -> :develop
+  # Merge to main that changes what ends up in the image -> :develop
+  # Keep this list in sync with IMAGE_PATHS in plan.yml.
   push:
     branches: [main]
     paths:
@@ -15,15 +18,12 @@ on:
       - app/**
       - components/**
       - lib/**
+      - public/**
       - config/camps.example.json
-      - .github/workflows/docker.yml
-  # Every PR (incl. Renovate) builds both architectures as a check and pushes
-  # nothing. No path filter: the required "build-complete" check must always report.
-  pull_request:
-    branches: [main]
-  # Published GitHub release -> :<release-tag> and :latest
+  # Published GitHub release -> :<release-tag> and :latest (always built)
   release:
     types: [published]
+  # Manual rebuild of :develop from main
   workflow_dispatch:
 
 env:
@@ -31,12 +31,12 @@ env:
 
 concurrency:
   group: docker-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   # One native runner per architecture, in parallel (no QEMU emulation).
-  # On PRs this only builds; otherwise each job pushes its image by digest
-  # and the merge job below combines them into one multi-arch tag.
+  # Each job pushes its image by digest; the merge job combines them into
+  # one multi-arch tag.
   build:
     strategy:
       fail-fast: true
@@ -49,8 +49,6 @@ jobs:
     runs-on: ${{ matrix.runner }}
     permissions:
       contents: read
-    env:
-      PUBLISH: ${{ github.event_name != 'pull_request' }}
     steps:
       - name: Platform pair
         run: |
@@ -62,7 +60,6 @@ jobs:
       - uses: docker/setup-buildx-action@v3
 
       - uses: docker/login-action@v3
-        if: env.PUBLISH == 'true'
         with:
           username: ${{ vars.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
@@ -78,20 +75,17 @@ jobs:
           context: .
           platforms: ${{ matrix.platform }}
           labels: ${{ steps.meta.outputs.labels }}
-          outputs: ${{ env.PUBLISH == 'true' && format('type=image,name={0},push-by-digest=true,name-canonical=true,push=true', env.IMAGE) || 'type=cacheonly' }}
+          outputs: type=image,name=${{ env.IMAGE }},push-by-digest=true,name-canonical=true,push=true
           cache-from: type=gha,scope=${{ env.PLATFORM_PAIR }}
-          # PRs only read the cache; exporting it costs more than it saves there
-          cache-to: ${{ env.PUBLISH == 'true' && format('type=gha,mode=max,scope={0}', env.PLATFORM_PAIR) || '' }}
+          cache-to: type=gha,mode=max,scope=${{ env.PLATFORM_PAIR }}
 
       - name: Export digest
-        if: env.PUBLISH == 'true'
         run: |
           mkdir -p "${{ runner.temp }}/digests"
           digest="${{ steps.build.outputs.digest }}"
           touch "${{ runner.temp }}/digests/${digest#sha256:}"
 
       - uses: actions/upload-artifact@v4
-        if: env.PUBLISH == 'true'
         with:
           name: digests-${{ env.PLATFORM_PAIR }}
           path: ${{ runner.temp }}/digests/*
@@ -101,7 +95,6 @@ jobs:
   # Combines the per-architecture images into the final tags:
   # push to main -> :develop, release -> :<tag> (+ :latest unless pre-release)
   merge:
-    if: github.event_name != 'pull_request'
     needs: build
     runs-on: ubuntu-latest
     permissions:
@@ -141,14 +134,3 @@ jobs:
 
       - name: Inspect
         run: docker buildx imagetools inspect "${{ env.IMAGE }}:${{ steps.meta.outputs.version }}"
-
-  # Single required status check for branch protection (ruleset "protect main").
-  build-complete:
-    if: always()
-    needs: build
-    runs-on: ubuntu-latest
-    steps:
-      - name: All builds succeeded
-        run: |
-          echo "build: ${{ needs.build.result }}"
-          test "${{ needs.build.result }}" = success
