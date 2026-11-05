@@ -17,7 +17,10 @@ export const Sheet = (p: P) => (<svg {...base(p)}><rect x="4" y="3" width="16" h
 export const Check = (p: P) => (<svg {...base(p)}><path d="m5 12.5 4.5 4.5L19 7.5" /></svg>);
 export const External = (p: P) => (<svg {...base(p)}><path d="M14 4h6v6M20 4l-9 9" /><path d="M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5" /></svg>);
 export const Download = (p: P) => (<svg {...base(p)}><path d="M12 4v11M7 10l5 5 5-5M4 20h16" /></svg>);
-export const Alert = (p: P) => (<svg {...base(p)}><path d="M12 3 2 20h20z" /><path d="M12 10v4M12 17h.01" /></svg>);
+export const Upload = (p: P) => (<svg {...base(p)}><path d="M12 15V4M7 9l5-5 5 5M4 20h16" /></svg>);
+export const Eye = (p: P) => (<svg {...base(p)}><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z" /><circle cx="12" cy="12" r="3" /></svg>);
+export const Close = (p: P) => (<svg {...base(p)}><path d="M6 6l12 12M18 6 6 18" /></svg>);
+export const Alert =(p: P) => (<svg {...base(p)}><path d="M12 3 2 20h20z" /><path d="M12 10v4M12 17h.01" /></svg>);
 
 /** Ridge line used as quiet decoration in the hero */
 export const Ridge = () => (

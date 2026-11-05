@@ -1,6 +1,8 @@
 import "server-only";
 import { google, type drive_v3 } from "googleapis";
+import { Readable } from "node:stream";
 import { auth } from "@/auth";
+import { googleExport, previewKind } from "./files";
 
 export type DriveItem = {
   id: string;
@@ -11,6 +13,8 @@ export type DriveItem = {
   size?: number;
   modifiedBy?: string;
   isFolder: boolean;
+  /** the logged-in person may upload into this folder */
+  canAddChildren: boolean;
 };
 
 export const FOLDER = "application/vnd.google-apps.folder";
@@ -29,7 +33,7 @@ async function client(): Promise<drive_v3.Drive> {
   return google.drive({ version: "v3", auth: oauth });
 }
 
-const FIELDS = "id,name,mimeType,modifiedTime,webViewLink,size,lastModifyingUser(displayName)";
+const FIELDS = "id,name,mimeType,modifiedTime,webViewLink,size,lastModifyingUser(displayName),capabilities(canAddChildren)";
 
 function toItem(f: drive_v3.Schema$File): DriveItem {
   return {
@@ -41,6 +45,7 @@ function toItem(f: drive_v3.Schema$File): DriveItem {
     size: f.size ? Number(f.size) : undefined,
     modifiedBy: f.lastModifyingUser?.displayName ?? undefined,
     isFolder: f.mimeType === FOLDER,
+    canAddChildren: Boolean(f.capabilities?.canAddChildren),
   };
 }
 
@@ -96,10 +101,63 @@ export async function download(item: DriveItem): Promise<Downloaded> {
   return { buffer: Buffer.from(res.data as ArrayBuffer), format };
 }
 
+export class FileError extends Error {
+  constructor(message: string, readonly status: number) { super(message); }
+}
+
+/** Maps auth/Drive errors of the file routes to a plain-text response. */
+export function fileErrorResponse(e: unknown): Response {
+  const text = (msg: string, status: number) =>
+    new Response(msg, { status, headers: { "content-type": "text/plain; charset=utf-8", "cache-control": "no-store" } });
+  if (e instanceof AuthError) return text(e.message, 401);
+  if (e instanceof FileError) return text(e.message, e.status);
+  const status = Number((e as { status?: number; code?: number })?.status ?? (e as { code?: number })?.code);
+  if (status === 404) return text("Datei nicht gefunden oder kein Zugriff.", 404);
+  if (status === 403) return text("Kein Zugriff – im Drive fehlt die Berechtigung dafür.", 403);
+  console.error("drive file route:", e);
+  return text(e instanceof Error ? e.message : "Unbekannter Fehler.", 502);
+}
+
+export type OpenedFile ={ stream: Readable; name: string; mimeType: string; size?: number; inline: boolean };
+
+/**
+ * Streams a file for the Ablage. "preview" serves PDFs and images inline and
+ * renders Google Docs/Sheets/Slides as PDF; "download" (or anything that can't
+ * be previewed) is an attachment, with Google files exported to Office formats.
+ */
+export async function openFile(id: string, mode: "preview" | "download"): Promise<OpenedFile> {
+  const item = await getItem(id);
+  if (item.isFolder) throw new FileError("Ordner können nicht heruntergeladen werden.", 400);
+  const drive = await client();
+  const exp = googleExport(item.mimeType);
+  const kind = mode === "preview" ? previewKind(item.mimeType) : null;
+
+  if (exp || item.mimeType.startsWith("application/vnd.google-apps.")) {
+    if (!exp) throw new FileError("Dieser Dateityp kann nur im Drive geöffnet werden.", 415);
+    const mimeType = kind ? "application/pdf" : exp.mimeType;
+    const ext = kind ? "pdf" : exp.ext;
+    const res = await drive.files.export({ fileId: id, mimeType }, { responseType: "stream" });
+    return { stream: res.data as Readable, name: `${item.name}.${ext}`, mimeType, inline: Boolean(kind) };
+  }
+  const res = await drive.files.get({ fileId: id, alt: "media", supportsAllDrives: true }, { responseType: "stream" });
+  return { stream: res.data as Readable, name: item.name, mimeType: item.mimeType || "application/octet-stream", size: item.size, inline: Boolean(kind) };
+}
+
+/** Uploads a new file into a folder; Drive decides whether the person may write there. */
+export async function uploadFile(folderId: string, name: string, mimeType: string, body: Readable): Promise<DriveItem> {
+  const drive = await client();
+  const { data } = await drive.files.create({
+    requestBody: { name, parents: [folderId] },
+    media: { mimeType, body },
+    fields: FIELDS,
+    supportsAllDrives: true,
+  });
+  return toItem(data);
+}
+
 /** Uploads a new revision of an existing xlsx (Drive keeps the old version in its history). */
 export async function uploadNewRevision(id: string, buffer: Buffer) {
   const drive = await client();
-  const { Readable } = await import("node:stream");
   await drive.files.update({
     fileId: id,
     supportsAllDrives: true,
