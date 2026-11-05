@@ -9,6 +9,8 @@ import "server-only";
  * JWT cookies (…jwt_hp + …jwt_s), which we forward on every request.
  */
 const BASE = (process.env.ECAMP_URL ?? "https://app.ecamp3.ch").replace(/\/$/, "");
+// eCamp sits behind Cloudflare, which blocks Node's default user agent with a 403.
+const USER_AGENT = "pfadi-app (+https://github.com/muellefy/pfadi-app)";
 
 type Hal = Record<string, any> & { _links?: Record<string, { href: string }>; _embedded?: Record<string, any> };
 
@@ -19,7 +21,7 @@ export const ecampConfigured = () => Boolean(process.env.ECAMP_EMAIL && process.
 async function login() {
   const res = await fetch(`${BASE}/api/authentication_token`, {
     method: "POST",
-    headers: { "content-type": "application/json", accept: "application/hal+json" },
+    headers: { "content-type": "application/json", accept: "application/hal+json", "user-agent": USER_AGENT },
     body: JSON.stringify({ identifier: process.env.ECAMP_EMAIL, password: process.env.ECAMP_PASSWORD }),
     redirect: "manual",
     cache: "no-store",
@@ -34,7 +36,7 @@ async function get(pathOrHref: string, retry = true): Promise<Hal> {
   if (!session || Date.now() > session.until) await login();
   const url = pathOrHref.startsWith("http") ? pathOrHref : `${BASE}${pathOrHref}`;
   const res = await fetch(url, {
-    headers: { accept: "application/hal+json", cookie: session!.cookie },
+    headers: { accept: "application/hal+json", "user-agent": USER_AGENT, cookie: session!.cookie },
     next: { revalidate: 120 },
   });
   if (res.status === 401 && retry) { session = null; return get(pathOrHref, false); }
