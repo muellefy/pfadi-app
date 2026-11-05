@@ -3,7 +3,12 @@
 FROM node:22-alpine AS deps
 WORKDIR /app
 COPY package.json package-lock.json ./
-RUN npm ci
+# Optional extra CA bundle for TLS-intercepting proxies (e.g. Zscaler):
+#   docker build --secret id=ca,src=/etc/ssl/certs/ca-certificates.crt .
+# Mounted only during this step, never stored in the image.
+RUN --mount=type=secret,id=ca,required=false \
+    if [ -f /run/secrets/ca ]; then export NODE_EXTRA_CA_CERTS=/run/secrets/ca; fi; \
+    npm ci
 
 FROM node:22-alpine AS build
 WORKDIR /app

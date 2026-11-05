@@ -1,7 +1,7 @@
 services:
   app:
     build: .
-    image: pfadi-app:latest
+    image: lostiboy7/pfadi-app:latest
     restart: unless-stopped
     env_file: .env
     ports:
