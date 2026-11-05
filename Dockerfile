@@ -30,5 +30,6 @@ COPY --from=build --chown=app:app /app/.next/static ./.next/static
 COPY --from=build --chown=app:app /app/config/camps.example.json ./config/camps.example.json
 USER app
 EXPOSE 3000
-HEALTHCHECK --interval=30s --timeout=5s --retries=3 CMD wget -qO- http://127.0.0.1:3000/api/health || exit 1
+# -Y off: never route the local check through HTTP(S)_PROXY (busybox wget ignores NO_PROXY)
+HEALTHCHECK --interval=30s --timeout=5s --retries=3 CMD wget -Y off -qO- http://127.0.0.1:3000/api/health || exit 1
 CMD ["node", "server.js"]
