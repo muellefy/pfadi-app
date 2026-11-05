@@ -4,7 +4,6 @@
     "config:recommended",
     ":dependencyDashboard",
     ":timezone(Europe/Zurich)",
-    "schedule:weekly",
     "group:allNonMajor"
   ],
   "semanticCommits": "enabled",
