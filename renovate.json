@@ -7,7 +7,12 @@
     "schedule:weekly",
     "group:allNonMajor"
   ],
-  "labels": ["dependencies"],
+  "semanticCommits": "enabled",
+  "semanticCommitType": "chore",
+  "semanticCommitScope": "deps",
+  "labels": [
+    "dependencies"
+  ],
   "prConcurrentLimit": 5,
   "lockFileMaintenance": {
     "enabled": true
@@ -15,12 +20,16 @@
   "packageRules": [
     {
       "description": "Our own published image, not an upstream dependency",
-      "matchPackageNames": ["lostiboy7/pfadi-app"],
+      "matchPackageNames": [
+        "lostiboy7/pfadi-app"
+      ],
       "enabled": false
     },
     {
       "description": "Keep the Docker base image (node) on its own PR",
-      "matchDatasources": ["docker"],
+      "matchDatasources": [
+        "docker"
+      ],
       "groupName": "docker base images"
     }
   ]

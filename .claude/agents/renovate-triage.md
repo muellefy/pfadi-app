@@ -93,8 +93,11 @@ Clean up: `git worktree remove --force "$SCRATCH/wt"`,
 
 ## Step 3 — merge (class A only, only if asked)
 
+Squash and merge is the only allowed method; the Renovate PR title
+(`chore(deps): …`) becomes the commit on `main`.
+
 ```bash
-gh pr merge <n> --merge --delete-branch
+gh pr merge <n> --squash --delete-branch
 gh pr view <n> --json state,mergedAt
 ```
 
