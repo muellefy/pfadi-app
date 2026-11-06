@@ -1,4 +1,5 @@
 import "server-only";
+import { cached } from "./cache";
 
 /**
  * Read-only client for the eCamp v3 HAL+JSON API (https://app.ecamp3.ch/api).
@@ -15,6 +16,7 @@ const USER_AGENT = "pfadi-app (+https://github.com/muellefy/pfadi-app)";
 type Hal = Record<string, any> & { _links?: Record<string, { href: string }>; _embedded?: Record<string, any> };
 
 let session: { cookie: string; until: number } | null = null;
+let loggingIn: Promise<void> | null = null;
 
 export const ecampConfigured = () => Boolean(process.env.ECAMP_EMAIL && process.env.ECAMP_PASSWORD);
 
@@ -32,12 +34,19 @@ async function login() {
   session = { cookie, until: Date.now() + 45 * 60_000 };
 }
 
+/** Parallel requests wait for one login instead of each logging in. */
+function ensureSession() {
+  if (session && Date.now() < session.until) return;
+  loggingIn ??= login().finally(() => { loggingIn = null; });
+  return loggingIn;
+}
+
 async function get(pathOrHref: string, retry = true): Promise<Hal> {
-  if (!session || Date.now() > session.until) await login();
+  await ensureSession();
   const url = pathOrHref.startsWith("http") ? pathOrHref : `${BASE}${pathOrHref}`;
   const res = await fetch(url, {
     headers: { accept: "application/hal+json", "user-agent": USER_AGENT, cookie: session!.cookie },
-    next: { revalidate: 120 },
+    cache: "no-store", // getProgram caches the mapped result instead
   });
   if (res.status === 401 && retry) { session = null; return get(pathOrHref, false); }
   if (!res.ok) throw new Error(`eCamp ${res.status} bei ${new URL(url).pathname}`);
@@ -62,7 +71,10 @@ export type EcampProgram = {
 
 const ROLE: Record<string, string> = { manager: "Lagerleitung", member: "Leiter*in", guest: "Gast" };
 
-export async function getProgram(campId: string): Promise<EcampProgram> {
+/** Same for every viewer (one technical eCamp account), so one fetch serves everybody for 2 minutes. */
+export const getProgram = (campId: string) => cached(`ecamp:${campId}`, 120_000, () => fetchProgram(campId));
+
+async function fetchProgram(campId: string): Promise<EcampProgram> {
   const campHref = `/api/camps/${campId}`;
   const q = encodeURIComponent(campHref);
   const [camp, periods, categories, activities, collabs, labels] = await Promise.all([
