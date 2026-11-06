@@ -19,11 +19,13 @@ RUN npm run build
 
 FROM node:26-alpine AS run
 WORKDIR /app
+# TZ: "today" (overdue Termine, countdown) and shown times follow Swiss time, not UTC
 ENV NODE_ENV=production \
     NEXT_TELEMETRY_DISABLED=1 \
     HOSTNAME=0.0.0.0 \
     PORT=3000 \
-    CAMPS_CONFIG=/app/config/camps.json
+    CAMPS_CONFIG=/app/config/camps.json \
+    TZ=Europe/Zurich
 RUN addgroup -S app && adduser -S app -G app
 COPY --from=build --chown=app:app /app/.next/standalone ./
 COPY --from=build --chown=app:app /app/.next/static ./.next/static

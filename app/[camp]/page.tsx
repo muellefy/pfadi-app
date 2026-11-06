@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getCamp } from "@/lib/config";
-import { campDates, loadPeople, loadProgram, loadRessorts, loadTermine } from "@/lib/data";
+import { loadPeople, loadProgram, loadRessorts, loadTermine } from "@/lib/data";
+import { campDates } from "@/lib/tables";
 import { ErrorNotice, StatusPill, daysUntil, relative, weekday } from "@/components/Bits";
 import { Avatar, Ridge } from "@/components/icons";
 

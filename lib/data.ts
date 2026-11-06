@@ -52,16 +52,3 @@ export const loadProgram = cache((camp: CampConfig) =>
     return { data: await getProgram(camp.ecampCampId) };
   }),
 );
-
-/** Camp dates: eCamp periods win, then config, then "Erster Lagertag" in Lagerdaten.xlsx. */
-export function campDates(camp: CampConfig, program?: EcampProgram | null, termine?: TermineSheet) {
-  const p = program?.periods ?? [];
-  if (p.length) return { start: p[0].start.slice(0, 10), end: p[p.length - 1].end.slice(0, 10) };
-  let start = camp.start;
-  const fromSheet = termine?.meta["Erster Lagertag"];
-  if (!start && fromSheet) {
-    const m = fromSheet.match(/(\d{1,2})\.(\d{1,2})\.(\d{4})/);
-    if (m) start = `${m[3]}-${m[2].padStart(2, "0")}-${m[1].padStart(2, "0")}`;
-  }
-  return { start, end: camp.end };
-}
