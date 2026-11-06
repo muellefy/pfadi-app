@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getCamp } from "@/lib/config";
-import { campDates, loadPeople } from "@/lib/data";
+import { loadPeople, loadProgram, loadTermine } from "@/lib/data";
+import { campDates } from "@/lib/tables";
 import { ErrorNotice, Source } from "@/components/Bits";
 import { PeopleView } from "@/components/PeopleView";
 
@@ -18,8 +19,9 @@ export default async function PersonenPage({
   const camp = await getCamp(slug);
   if (!camp) notFound();
   const which = liste === "leiter" ? "leiter" : "tn";
-  const res = await loadPeople(camp, which);
-  const { start } = campDates(camp);
+  // eCamp and Lagerdaten.xlsx can hold the camp start, needed for "Alter am Lagerbeginn"
+  const [res, program, termine] = await Promise.all([loadPeople(camp, which), loadProgram(camp), loadTermine(camp)]);
+  const { start } = campDates(camp, program.ok ? program.data : null, termine.ok ? termine.data : undefined);
 
   return (
     <>

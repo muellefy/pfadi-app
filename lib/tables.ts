@@ -1,7 +1,9 @@
 import "server-only";
 import ExcelJS from "exceljs";
 import Papa from "papaparse";
+import type { CampConfig } from "./config";
 import type { Downloaded } from "./drive";
+import type { EcampProgram } from "./ecamp";
 
 export type Grid = string[][];
 
@@ -46,6 +48,15 @@ export function parseSwissDate(s: string): Date | null {
   if (!m) return null;
   const y = m[3].length === 2 ? 2000 + Number(m[3]) : Number(m[3]);
   return new Date(Date.UTC(y, Number(m[2]) - 1, Number(m[1])));
+}
+
+/** Camp dates: eCamp periods win, then config, then "Erster Lagertag" in Lagerdaten.xlsx. */
+export function campDates(camp: CampConfig, program?: EcampProgram | null, termine?: TermineSheet) {
+  const p = program?.periods ?? [];
+  if (p.length) return { start: p[0].start.slice(0, 10), end: p[p.length - 1].end.slice(0, 10) };
+  const fromSheet = termine?.meta["Erster Lagertag"];
+  const start = camp.start ?? (fromSheet ? parseSwissDate(fromSheet)?.toISOString().slice(0, 10) : undefined);
+  return { start, end: camp.end };
 }
 
 /* ---------------------------------------------------------------- Termine */
