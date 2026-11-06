@@ -22,13 +22,6 @@ export const Eye = (p: P) => (<svg {...base(p)}><path d="M2 12s3.5-7 10-7 10 7 1
 export const Close = (p: P) => (<svg {...base(p)}><path d="M6 6l12 12M18 6 6 18" /></svg>);
 export const Alert =(p: P) => (<svg {...base(p)}><path d="M12 3 2 20h20z" /><path d="M12 10v4M12 17h.01" /></svg>);
 
-/** Ridge line used as quiet decoration in the hero */
-export const Ridge = () => (
-  <svg className="ridge" viewBox="0 0 600 160" preserveAspectRatio="none" aria-hidden>
-    <path d="M0 160 L80 70 L130 110 L210 30 L290 120 L350 80 L420 140 L500 50 L600 130 L600 160 Z" fill="currentColor" />
-  </svg>
-);
-
 const PALETTE = ["#2f5d3a", "#b8913f", "#b4482a", "#3f6f8f", "#7a4f8c", "#4f7d6b", "#a3632c", "#5b6b2f"];
 export function Avatar({ name }: { name: string }) {
   const sum = [...name].reduce((s, ch) => s + ch.charCodeAt(0), 0);
