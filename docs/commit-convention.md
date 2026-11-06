@@ -29,7 +29,7 @@ Not used in this repo: `perf`, `test`, `style` — skip them unless a real case 
 
 | Scope | Files |
 |---|---|
-| `auth` | `auth.ts`, `middleware.ts`, `app/login`, `app/api/auth` |
+| `auth` | `auth.ts`, `proxy.ts`, `app/login`, `app/api/auth` |
 | `ecamp` | `lib/ecamp.ts` |
 | `drive` | `lib/drive.ts` |
 | `config` | `lib/config.ts`, `config/camps.example.json`, env vars |
