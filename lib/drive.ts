@@ -4,6 +4,9 @@ import { Readable } from "node:stream";
 import { auth } from "@/auth";
 import { googleExport, previewKind } from "./files";
 
+/** For small metadata/table requests: a stalled call must not hold the Termine write lock forever. Not for streamed files. */
+const SMALL = { timeout: 30_000 };
+
 export type DriveItem = {
   id: string;
   name: string;
@@ -51,7 +54,7 @@ function toItem(f: drive_v3.Schema$File): DriveItem {
 
 export async function getItem(id: string): Promise<DriveItem> {
   const drive = await client();
-  const { data } = await drive.files.get({ fileId: id, fields: FIELDS, supportsAllDrives: true });
+  const { data } = await drive.files.get({ fileId: id, fields: FIELDS, supportsAllDrives: true }, SMALL);
   return toItem(data);
 }
 
@@ -93,10 +96,10 @@ export type Downloaded = { buffer: Buffer; format: "xlsx" | "csv" };
 export async function download(item: DriveItem): Promise<Downloaded> {
   const drive = await client();
   if (item.mimeType === SHEET) {
-    const res = await drive.files.export({ fileId: item.id, mimeType: XLSX }, { responseType: "arraybuffer" });
+    const res = await drive.files.export({ fileId: item.id, mimeType: XLSX }, { ...SMALL, responseType: "arraybuffer" });
     return { buffer: Buffer.from(res.data as ArrayBuffer), format: "xlsx" };
   }
-  const res = await drive.files.get({ fileId: item.id, alt: "media", supportsAllDrives: true }, { responseType: "arraybuffer" });
+  const res = await drive.files.get({ fileId: item.id, alt: "media", supportsAllDrives: true }, { ...SMALL, responseType: "arraybuffer" });
   const format = item.mimeType === "text/csv" || item.name.toLowerCase().endsWith(".csv") ? "csv" : "xlsx";
   return { buffer: Buffer.from(res.data as ArrayBuffer), format };
 }
@@ -162,7 +165,7 @@ export async function uploadNewRevision(id: string, buffer: Buffer) {
     fileId: id,
     supportsAllDrives: true,
     media: { mimeType: XLSX, body: Readable.from(buffer) },
-  });
+  }, SMALL);
 }
 
 /** "06_Lagerbauten (Kenai)" → { nr: "06", title: "Lagerbauten", owner: "Kenai" } */
