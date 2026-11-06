@@ -81,7 +81,7 @@ export function AblageView({ slug, path, folderId, items, canUpload }: Props) {
           <button className="btn primary" onClick={() => input.current?.click()} disabled={busy}>
             <Upload size={16} /> {busy ? "Wird hochgeladen …" : "Dateien hochladen"}
           </button>
-          <span className="small muted">oder Dateien hierher ziehen</span>
+          <span className="small muted drop-hint">oder Dateien hierher ziehen</span>
           <input ref={input} type="file" multiple hidden onChange={(e) => { upload(e.target.files ?? []); e.target.value = ""; }} />
         </div>
       )}
