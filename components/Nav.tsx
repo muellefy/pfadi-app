@@ -14,7 +14,6 @@ export function Nav({ slug }: { slug: string }) {
   ];
   return (
     <nav className="nav" aria-label="Bereiche">
-      <span className="label">Lager</span>
       {items.map(({ href, label, icon: Icon, exact }) => {
         const active = exact ? path === href : path.startsWith(href);
         return (
