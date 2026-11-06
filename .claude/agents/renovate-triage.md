@@ -46,11 +46,11 @@ notes / changelog links).
 |---|---|---|
 | **A — merge** | patch/minor bump, `@types/*`, lockfile maintenance, `node`/`caddy` patch digest, GitHub Actions minor — and all local checks pass | verify, then merge |
 | **B — needs a look** | minor bump of a core runtime dep with notable changelog entries, or any check produced new warnings | do not merge; summarize what to look at |
-| **C — hold** | any **major** (incl. `node` 22→24, `next`, `react`, `next-auth`, `googleapis`, `zod`), or a check fails | do not merge; name the breaking changes and what unblocks it |
+| **C — hold** | any **major** (incl. `node` 22→24, `next`, `react`, `next-auth`, `@googleapis/drive`, `zod`), or a check fails | do not merge; name the breaking changes and what unblocks it |
 | **D — superseded** | two PRs touch the same dependency | say which to keep |
 
 Always at least **B**: `next-auth` (beta, auth path — a regression locks
-everyone out), `next`, `react`/`react-dom`, `googleapis` (Drive access),
+everyone out), `next`, `react`/`react-dom`, `@googleapis/drive` (Drive access),
 anything changing the `Dockerfile` base image major.
 
 ## Step 2 — verify locally

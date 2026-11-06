@@ -6,7 +6,8 @@ import { fileErrorResponse, uploadFile } from "@/lib/drive";
 function sameOrigin(req: Request) {
   const origin = req.headers.get("origin");
   if (!origin) return false;
-  const host = new URL(origin).host;
+  let host: string;
+  try { host = new URL(origin).host; } catch { return false; } // e.g. "Origin: null" from sandboxed frames
   const allowed = [req.headers.get("x-forwarded-host"), req.headers.get("host")];
   if (process.env.AUTH_URL) allowed.push(new URL(process.env.AUTH_URL).host);
   return allowed.includes(host);
@@ -15,7 +16,7 @@ function sameOrigin(req: Request) {
 /**
  * POST /api/drive/upload?folder=<id>, body = the raw file, header x-file-name.
  * The body is streamed straight to Drive, so large files never sit in memory.
- * This path is excluded from the middleware (which would buffer the body);
+ * This path is excluded from the proxy (which would buffer the body);
  * uploadFile() checks the session itself.
  */
 export async function POST(req: Request) {

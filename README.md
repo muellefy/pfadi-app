@@ -70,7 +70,7 @@ Entwicklung ohne Docker: `npm install && npm run dev`.
 
 ```
 auth.ts                 Google-Login (Domain-Check, Token-Refresh)
-middleware.ts           schützt alle Seiten
+proxy.ts                schützt alle Seiten
 lib/config.ts           liest config/camps.json
 lib/drive.ts            Drive-Zugriff als angemeldete Person
 lib/tables.ts           xlsx/csv → Termine & Personen
