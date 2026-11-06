@@ -55,7 +55,8 @@ export function campDates(camp: CampConfig, program?: EcampProgram | null, termi
   const p = program?.periods ?? [];
   if (p.length) return { start: p[0].start.slice(0, 10), end: p[p.length - 1].end.slice(0, 10) };
   const fromSheet = termine?.meta["Erster Lagertag"];
-  const start = camp.start ?? (fromSheet ? parseSwissDate(fromSheet)?.toISOString().slice(0, 10) : undefined);
+  // the cell may be text like "Sa 19.07.2027", so skip anything before the date
+  const start = camp.start || (fromSheet ? parseSwissDate(fromSheet.replace(/^\D+/, ""))?.toISOString().slice(0, 10) : undefined);
   return { start, end: camp.end };
 }
 

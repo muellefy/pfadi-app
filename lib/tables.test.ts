@@ -55,6 +55,16 @@ test("campDates: reads 'Erster Lagertag' with a two-digit year", () => {
   assert.equal(campDates(camp, null, termine).start, "2027-07-19");
 });
 
+test("campDates: finds the date inside text like 'Sa 19.07.2027'", () => {
+  const termine = parseTermine([["Erster Lagertag", "Sa 19.07.2027"], ["Wann", "Was"]]);
+  assert.equal(campDates(camp, null, termine).start, "2027-07-19");
+});
+
+test("campDates: an empty config start falls back to the sheet", () => {
+  const termine = parseTermine(LAGERDATEN);
+  assert.equal(campDates({ ...camp, start: "" }, null, termine).start, "2027-07-19");
+});
+
 test("campDates: config start wins over the sheet", () => {
   const termine = parseTermine(LAGERDATEN);
   assert.equal(campDates({ ...camp, start: "2027-07-20" }, null, termine).start, "2027-07-20");
