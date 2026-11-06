@@ -1,6 +1,7 @@
 import "server-only";
-import { google, type drive_v3 } from "googleapis";
+import { auth as gauth, drive as gdrive, type drive_v3 } from "@googleapis/drive";
 import { Readable } from "node:stream";
+import { cache } from "react";
 import { auth } from "@/auth";
 import { googleExport, previewKind } from "./files";
 
@@ -27,14 +28,17 @@ const TABLE_TYPES = [SHEET, XLSX, "text/csv", "application/vnd.ms-excel"];
 
 export class AuthError extends Error {}
 
-/** Drive client acting as the logged-in user (their permissions, not a service account). */
-async function client(): Promise<drive_v3.Drive> {
+/**
+ * Drive client acting as the logged-in user (their permissions, not a service account).
+ * Built once per request; outside a React render (route handlers) cache() just calls through.
+ */
+const client = cache(async (): Promise<drive_v3.Drive> => {
   const session = await auth();
   if (!session?.accessToken || session.error) throw new AuthError("Google-Sitzung abgelaufen – bitte neu anmelden.");
-  const oauth = new google.auth.OAuth2();
+  const oauth = new gauth.OAuth2();
   oauth.setCredentials({ access_token: session.accessToken });
-  return google.drive({ version: "v3", auth: oauth });
-}
+  return gdrive({ version: "v3", auth: oauth });
+});
 
 const FIELDS = "id,name,mimeType,modifiedTime,webViewLink,size,lastModifyingUser(displayName),capabilities(canAddChildren)";
 
