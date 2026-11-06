@@ -1,6 +1,7 @@
 "use client";
 import { Fragment, useMemo, useState } from "react";
 import type { PersonTable } from "@/lib/tables";
+import { toCsv } from "@/lib/csv";
 import { Download } from "./icons";
 
 type Props = { table: PersonTable; campStart?: string; label: string };
@@ -14,12 +15,6 @@ function ageAt(birth: string, at: Date) {
   let a = at.getFullYear() - y;
   if (at.getMonth() + 1 < mo || (at.getMonth() + 1 === mo && at.getDate() < d)) a--;
   return a;
-}
-
-function toCsv(columns: string[], rows: Record<string, string>[]) {
-  const esc = (v: string) => (/[";\n]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v);
-  // semicolon + BOM so Excel (de-CH) opens it correctly
-  return "﻿" + [columns.map(esc).join(";"), ...rows.map((r) => columns.map((c) => esc(r[c] ?? "")).join(";"))].join("\r\n");
 }
 
 export function PeopleView({ table, campStart, label }: Props) {
