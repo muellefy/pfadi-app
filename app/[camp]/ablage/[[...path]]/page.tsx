@@ -47,12 +47,14 @@ export default async function AblagePage({ params }: { params: Promise<{ camp: s
           Im Drive öffnen <External size={14} />
         </a>
       </header>
-      <nav className="crumbs" aria-label="Pfad">
-        <Link href={`/${slug}/ablage`}>{camp.name}</Link>
-        {crumbs.map((c, i) => (
-          <span key={c.id}> / <Link href={`/${slug}/ablage/${path.slice(0, i + 1).join("/")}`}>{c.name}</Link></span>
-        ))}
-      </nav>
+      {path.length > 0 && (
+        <nav className="crumbs" aria-label="Pfad">
+          <Link href={`/${slug}/ablage`}>Ablage</Link>
+          {crumbs.map((c, i) => (
+            <span key={c.id}>/ <Link href={`/${slug}/ablage/${path.slice(0, i + 1).join("/")}`}>{c.name}</Link></span>
+          ))}
+        </nav>
+      )}
       {error ? (
         <ErrorNotice error={error} />
       ) : (
