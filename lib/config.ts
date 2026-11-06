@@ -35,7 +35,7 @@ let cache: { at: number; value: AppConfig } | null = null;
 
 export async function getConfig(): Promise<AppConfig> {
   if (cache && Date.now() - cache.at < 30_000) return cache.value;
-  const file = process.env.CAMPS_CONFIG ?? path.join(process.cwd(), "config", "camps.json");
+  const file = process.env.CAMPS_CONFIG ?? path.join(/* turbopackIgnore: true */ process.cwd(), "config", "camps.json");
   const raw = await readFile(file, "utf8").catch(() => {
     throw new Error(`Konfiguration fehlt: ${file}. Kopiere config/camps.example.json nach config/camps.json.`);
   });
