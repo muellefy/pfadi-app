@@ -1,10 +1,11 @@
 import "server-only";
 import { cache } from "react";
 import type { CampConfig } from "./config";
-import { download, getItem, listChildren, parseRessort, resolveTableFile, type DriveItem } from "./drive";
+import { download, getItem, listChildren, parseRessort, resolveTableFile, XLSX, type DriveItem } from "./drive";
 import { cached } from "./cache";
 import { parsePeople, parseTermine, toGrid, type Grid, type PersonTable, type TermineSheet } from "./tables";
 import { ecampConfigured, getProgram, type EcampProgram } from "./ecamp";
+import { parseBudget, type Budget } from "./budget";
 
 /** Every loader returns either data or a readable error, so one broken file never takes a whole page down. */
 export type Result<T> = { ok: true; data: T; source?: DriveItem } | { ok: false; error: string };
@@ -61,5 +62,20 @@ export const loadProgram = cache((camp: CampConfig) =>
   attempt<EcampProgram | null>(async () => {
     if (!camp.ecampCampId || !ecampConfigured()) return { data: null };
     return { data: await getProgram(camp.ecampCampId) };
+  }),
+);
+
+export const BUDGET_FILE = /budget|abrechnung/i;
+
+/** The budget workbook, parsed (with all formulas evaluated) once per file version. */
+export const loadBudget = cache((camp: CampConfig) =>
+  attempt<Budget>(async () => {
+    if (!camp.drive.budgetFileId) throw new Error("Keine Budget-Datei konfiguriert (drive.budgetFileId).");
+    const source = await resolveTableFile(camp.drive.budgetFileId, BUDGET_FILE);
+    if (!source) throw new Error("Im Budget-Ordner liegt noch keine Tabelle.");
+    if (source.mimeType !== XLSX) throw new Error("Das Budget muss eine .xlsx-Datei sein (Google Sheets und CSV gehen hier nicht).");
+    const parse = async () => parseBudget((await download(source)).buffer);
+    const data = source.modifiedTime ? await cached(`budget:${source.id}:${source.modifiedTime}`, 6 * 3_600_000, parse) : await parse();
+    return { data, source };
   }),
 );

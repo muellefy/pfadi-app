@@ -64,5 +64,7 @@ export function detectFiles(entries: CopiedEntry[]) {
     termineFileId: find((e) => !e.isFolder && isTable(e) && /lagerdaten|termine/i.test(e.name)),
     tnFileId: find((e) => e.isFolder && TN_LIST.test(e.name)) ?? find((e) => !e.isFolder && isTable(e) && named(TN_LIST)(e)),
     leiterFileId: find((e) => e.isFolder && /leiter.*liste|leiterliste/i.test(e.name)) ?? find((e) => !e.isFolder && isTable(e) && /leiter.*liste/i.test(e.name)),
+    // the folder, so the newest budget file inside is used (also once it's renamed for the camp)
+    budgetFileId: find((e) => e.isFolder && /budget|finanzen/i.test(e.name)) ?? find((e) => !e.isFolder && isTable(e) && /budget|abrechnung/i.test(e.name)),
   };
 }

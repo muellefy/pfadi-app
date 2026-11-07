@@ -23,6 +23,7 @@ const Camp = z.object({
     termineFileId: z.string().optional(), // Lagerdaten.xlsx
     tnFileId: z.string().optional(), // file OR folder (newest xlsx/csv/Sheet inside is used)
     leiterFileId: z.string().optional(),
+    budgetFileId: z.string().optional(), // Lagerbudget/Abrechnung xlsx, or its folder
   }),
   ecampCampId: z.string().optional(), // id from the eCamp URL: app.ecamp3.ch/camps/<id>/...
   writeBack: z.boolean().default(false),

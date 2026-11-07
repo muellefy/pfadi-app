@@ -101,11 +101,11 @@ button, input, select { font: inherit; color: inherit; }
   .camp-switch a[aria-current="true"] { box-shadow: none; background: var(--ink); border-color: var(--ink); color: var(--paper); }
   .nav {
     position: fixed; z-index: 20; left: 0; right: 0; bottom: 0;
-    display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 2px;
+    display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 2px;
     padding: 4px 4px calc(4px + env(safe-area-inset-bottom));
     background: var(--card); border-top: 1px solid var(--line);
   }
-  .nav a { flex-direction: column; justify-content: center; gap: 2px; min-height: 52px; padding: 4px 2px; font-size: 12px; text-align: center; }
+  .nav a { flex-direction: column; justify-content: center; gap: 2px; min-height: 52px; padding: 4px 1px; font-size: 11.5px; text-align: center; }
   .nav a svg { width: 22px; height: 22px; }
   .nav .long { display: none; }
   .nav .short { display: inline; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -352,3 +352,39 @@ table.data tr:hover td { background: var(--forest-soft); }
 .form input:focus, .form select:focus, .form textarea:focus { border-color: var(--forest); }
 .form .row { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(220px, 100%), 1fr)); gap: 12px; }
 .camp-switch .all { font-size: 14px; }
+
+/* ---------- budget */
+.facts > div { flex: 1 1 150px; display: grid; padding: 12px 16px 12px 0; }
+.facts > div + div { padding-left: 16px; border-left: 1px solid var(--line); }
+.facts .alert b { color: var(--rust); }
+@media (max-width: 600px) { .facts > div { flex-basis: 50%; padding-left: 0 !important; border-left: 0 !important; } }
+.budget-grid { grid-template-columns: minmax(0, 3fr) minmax(280px, 2fr); align-items: start; }
+@media (max-width: 1000px) { .budget-grid { grid-template-columns: minmax(0, 1fr); } }
+table.data .num { text-align: right; font-variant-numeric: tabular-nums; }
+table.data.budget td:first-child { white-space: normal; min-width: 14em; }
+table.data.budget tr.group th { position: static; font-family: var(--display); font-size: 21px; padding-top: 18px; cursor: default; border-bottom: 2px solid var(--ink); }
+table.data.budget tr.heading td { font-weight: 600; color: var(--muted); padding-top: 14px; border-top: 0; }
+table.data.budget tr.total td { font-weight: 600; border-top: 1px solid var(--ink); }
+table.data.budget tr:hover td { background: none; }
+table.data.budget td.input { padding: 3px 6px; }
+table.data.budget td.input.plan { background: color-mix(in srgb, #3f6f8f 12%, transparent); }
+table.data.budget td.input.actual { background: color-mix(in srgb, var(--forest) 12%, transparent); }
+.cell { width: 100%; min-width: 7em; text-align: right; font-variant-numeric: tabular-nums; padding: 5px 6px; border: 1px solid transparent; border-radius: 4px; background: transparent; }
+.cell:hover { border-color: var(--line); background: var(--card); }
+.cell:focus { border-color: var(--forest); background: var(--card); }
+.vs { display: grid; gap: 12px; }
+.vs-row { display: grid; grid-template-columns: minmax(0, 9em) minmax(0, 1fr); gap: 2px 12px; align-items: center; font-size: 15px; }
+.vs-row > span:first-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.vs-row > .small { grid-column: 2; }
+.vs-bars { display: grid; gap: 3px; }
+.vs-bars i { display: block; height: 8px; border-radius: 2px; min-width: 2px; }
+.vs-bars .plan, .key.plan { background: #3f6f8f; }
+.vs-bars .actual, .key.actual { background: var(--forest); }
+.vs-bars .over { background: var(--rust); }
+.key { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin: 0 4px 0 10px; vertical-align: -1px; }
+.key:first-child { margin-left: 0; }
+table.data.journal td:nth-child(3) { white-space: normal; min-width: 12em; }
+table.data.journal .in { color: var(--forest); }
+table.data.journal td.actions { white-space: nowrap; text-align: right; }
+table.data.journal tfoot td { font-weight: 600; border-top: 2px solid var(--ink); }
+.form.booking { gap: 12px; }
