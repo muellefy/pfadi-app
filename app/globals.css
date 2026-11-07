@@ -327,3 +327,6 @@ table.data tr:hover td { background: var(--forest-soft); }
 @media (prefers-reduced-motion: reduce) {
   * { transition: none !important; animation: none !important; }
 }
+
+.facts.skeleton { min-height: 76px; background: linear-gradient(90deg, transparent, var(--forest-soft), transparent) 0 0 / 200% 100%; animation: shimmer 1.4s linear infinite; }
+@keyframes shimmer { to { background-position: -200% 0; } }

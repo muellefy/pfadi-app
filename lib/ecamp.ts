@@ -71,8 +71,13 @@ export type EcampProgram = {
 
 const ROLE: Record<string, string> = { manager: "Lagerleitung", member: "Leiter*in", guest: "Gast" };
 
-/** Same for every viewer (one technical eCamp account), so one fetch serves everybody for 2 minutes. */
-export const getProgram = (campId: string) => cached(`ecamp:${campId}`, 120_000, () => fetchProgram(campId));
+/**
+ * Same for every viewer (one technical eCamp account), so one fetch serves everybody.
+ * Fresh for 2 minutes; after that the last program is shown at once while eCamp
+ * reloads in the background (a full fetch takes ~1.5 s).
+ */
+export const getProgram = (campId: string) =>
+  cached(`ecamp:${campId}`, 120_000, () => fetchProgram(campId), 12 * 3_600_000);
 
 async function fetchProgram(campId: string): Promise<EcampProgram> {
   const campHref = `/api/camps/${campId}`;
