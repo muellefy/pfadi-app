@@ -1,10 +1,12 @@
 import "server-only";
 import { cache } from "react";
 import type { CampConfig } from "./config";
-import { download, getItem, listChildren, parseRessort, resolveTableFile, type DriveItem } from "./drive";
+import { download, getItem, listChildren, parseRessort, resolveTableFile, XLSX, type DriveItem } from "./drive";
 import { cached } from "./cache";
 import { parsePeople, parseTermine, toGrid, type Grid, type PersonTable, type TermineSheet } from "./tables";
 import { ecampConfigured, getProgram, type EcampProgram } from "./ecamp";
+import { parseBudget, type Budget } from "./budget";
+import { MENU_FILE, parseMenu, type MenuPlan } from "./menu";
 
 /** Every loader returns either data or a readable error, so one broken file never takes a whole page down. */
 export type Result<T> = { ok: true; data: T; source?: DriveItem } | { ok: false; error: string };
@@ -61,5 +63,41 @@ export const loadProgram = cache((camp: CampConfig) =>
   attempt<EcampProgram | null>(async () => {
     if (!camp.ecampCampId || !ecampConfigured()) return { data: null };
     return { data: await getProgram(camp.ecampCampId) };
+  }),
+);
+
+export const BUDGET_FILE = /budget|abrechnung/i;
+
+/** The budget workbook, parsed (with all formulas evaluated) once per file version. */
+export const loadBudget = cache((camp: CampConfig) =>
+  attempt<Budget>(async () => {
+    if (!camp.drive.budgetFileId) throw new Error("Keine Budget-Datei konfiguriert (drive.budgetFileId).");
+    const source = await resolveTableFile(camp.drive.budgetFileId, BUDGET_FILE);
+    if (!source) throw new Error("Im Budget-Ordner liegt noch keine Tabelle.");
+    if (source.mimeType !== XLSX) throw new Error("Das Budget muss eine .xlsx-Datei sein (Google Sheets und CSV gehen hier nicht).");
+    const parse = async () => parseBudget((await download(source)).buffer);
+    const data = source.modifiedTime ? await cached(`budget:${source.id}:${source.modifiedTime}`, 6 * 3_600_000, parse) : await parse();
+    return { data, source };
+  }),
+);
+
+export type MenuData = { plan: MenuPlan | null; folder?: DriveItem };
+
+/**
+ * The Menüplan. `menuFileId` is the xlsx itself or the Küche folder; in a folder the
+ * newest table called "Menüplan …" is used, and none yet means: offer to create one.
+ */
+export const loadMenu = cache((camp: CampConfig) =>
+  attempt<MenuData>(async () => {
+    if (!camp.drive.menuFileId) throw new Error("Kein Menüplan-Ordner konfiguriert (drive.menuFileId).");
+    const item = await getItem(camp.drive.menuFileId);
+    let source: DriveItem | undefined = item;
+    if (item.isFolder) {
+      const tables = (await listChildren(item.id)).filter((f) => !f.isFolder && MENU_FILE.test(f.name) && (f.mimeType === XLSX || f.mimeType === "application/vnd.google-apps.spreadsheet"));
+      tables.sort((a, b) => (b.modifiedTime ?? "").localeCompare(a.modifiedTime ?? ""));
+      if (!tables[0]) return { data: { plan: null, folder: item } };
+      source = await getItem(tables[0].id); // fresh after the app wrote it (see resolveTableFile)
+    }
+    return { data: { plan: parseMenu(await gridOf(source)), folder: item.isFolder ? item : undefined }, source };
   }),
 );

@@ -1,5 +1,6 @@
 {
   "organisation": "Pfadi Rhenania",
+  "templateFolderId": "ID_DES_VORLAGE_ORDNERS",
   "camps": [
     {
       "slug": "sola-27",
@@ -11,7 +12,9 @@
         "rootFolderId": "ID_DES_LAGERORDNERS",
         "termineFileId": "ID_VON_LAGERDATEN_XLSX",
         "tnFileId": "ID_DER_TN_LISTE_ODER_DES_ORDNERS",
-        "leiterFileId": "ID_DER_LEITERLISTE_ODER_DES_ORDNERS"
+        "leiterFileId": "ID_DER_LEITERLISTE_ODER_DES_ORDNERS",
+        "budgetFileId": "ID_DER_BUDGET_XLSX_ODER_DES_ORDNERS",
+        "menuFileId": "ID_DES_KUECHE_ORDNERS"
       },
       "ecampCampId": "ID_AUS_DER_ECAMP_URL",
       "writeBack": true

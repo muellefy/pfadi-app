@@ -5,6 +5,7 @@ out
 .env.*
 !.env.example
 config/camps.json
+data/
 *.tsbuildinfo
 next-env.d.ts
 .DS_Store

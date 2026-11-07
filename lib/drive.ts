@@ -20,11 +20,13 @@ export type DriveItem = {
   isFolder: boolean;
   /** the logged-in person may upload into this folder */
   canAddChildren: boolean;
+  /** the logged-in person may change this file */
+  canEdit: boolean;
 };
 
 export const FOLDER = "application/vnd.google-apps.folder";
 const SHEET = "application/vnd.google-apps.spreadsheet";
-const XLSX = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+export const XLSX = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
 const TABLE_TYPES = [SHEET, XLSX, "text/csv", "application/vnd.ms-excel"];
 
 export class AuthError extends Error {}
@@ -60,7 +62,7 @@ export function forgetDrive(id: string) {
   forget((k) => (k.startsWith("item:") || k.startsWith("list:")) && k.endsWith(`:${id}`));
 }
 
-const FIELDS = "id,name,mimeType,modifiedTime,webViewLink,size,lastModifyingUser(displayName),capabilities(canAddChildren)";
+const FIELDS = "id,name,mimeType,modifiedTime,webViewLink,size,lastModifyingUser(displayName),capabilities(canAddChildren,canEdit)";
 
 function toItem(f: drive_v3.Schema$File): DriveItem {
   return {
@@ -73,6 +75,7 @@ function toItem(f: drive_v3.Schema$File): DriveItem {
     modifiedBy: f.lastModifyingUser?.displayName ?? undefined,
     isFolder: f.mimeType === FOLDER,
     canAddChildren: Boolean(f.capabilities?.canAddChildren),
+    canEdit: Boolean(f.capabilities?.canEdit),
   };
 }
 
@@ -91,7 +94,7 @@ export function listChildren(folderId: string): Promise<DriveItem[]> {
   return perPerson("list", folderId, () => listChildrenFresh(folderId));
 }
 
-async function listChildrenFresh(folderId: string): Promise<DriveItem[]> {
+export async function listChildrenFresh(folderId: string): Promise<DriveItem[]> {
   const drive = await client();
   const out: DriveItem[] = [];
   let pageToken: string | undefined;
@@ -116,12 +119,14 @@ async function listChildrenFresh(folderId: string): Promise<DriveItem[]> {
  * A file id is used as-is; a folder id resolves to the most recently changed
  * spreadsheet/CSV in that folder (handy for "121_TN Liste" where new exports land).
  */
-export async function resolveTableFile(id: string): Promise<DriveItem | null> {
+export async function resolveTableFile(id: string, prefer?: RegExp): Promise<DriveItem | null> {
   const item = await getItem(id);
   if (!item.isFolder) return item;
   const tables = (await listChildren(id)).filter((f) => TABLE_TYPES.includes(f.mimeType) || /\.(csv|xlsx)$/i.test(f.name));
   tables.sort((a, b) => (b.modifiedTime ?? "").localeCompare(a.modifiedTime ?? ""));
-  return tables[0] ?? null;
+  const chosen = (prefer && tables.find((t) => prefer.test(t.name))) || tables[0];
+  // the file's own entry, not the folder listing's: that one is dropped when the app writes the file
+  return chosen ? getItem(chosen.id) : null;
 }
 
 export type Downloaded = { buffer: Buffer; format: "xlsx" | "csv" };
@@ -189,6 +194,29 @@ export async function uploadFile(folderId: string, name: string, mimeType: strin
     supportsAllDrives: true,
   });
   forgetDrive(folderId);
+  return toItem(data);
+}
+
+export async function createFolder(name: string, parentId: string): Promise<DriveItem> {
+  const drive = await client();
+  const { data } = await drive.files.create({
+    requestBody: { name, mimeType: FOLDER, parents: [parentId] },
+    fields: FIELDS,
+    supportsAllDrives: true,
+  }, SMALL);
+  forgetDrive(parentId);
+  return toItem(data);
+}
+
+/** Copies a file (Google Docs/Sheets and uploaded files alike) into a folder. */
+export async function copyFile(id: string, name: string, parentId: string): Promise<DriveItem> {
+  const drive = await client();
+  const { data } = await drive.files.copy({
+    fileId: id,
+    requestBody: { name, parents: [parentId] },
+    fields: FIELDS,
+    supportsAllDrives: true,
+  }, { timeout: 120_000 });
   return toItem(data);
 }
 
