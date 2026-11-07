@@ -6,6 +6,7 @@ import { cached } from "./cache";
 import { parsePeople, parseTermine, toGrid, type Grid, type PersonTable, type TermineSheet } from "./tables";
 import { ecampConfigured, getProgram, type EcampProgram } from "./ecamp";
 import { parseBudget, type Budget } from "./budget";
+import { MENU_FILE, parseMenu, type MenuPlan } from "./menu";
 
 /** Every loader returns either data or a readable error, so one broken file never takes a whole page down. */
 export type Result<T> = { ok: true; data: T; source?: DriveItem } | { ok: false; error: string };
@@ -77,5 +78,26 @@ export const loadBudget = cache((camp: CampConfig) =>
     const parse = async () => parseBudget((await download(source)).buffer);
     const data = source.modifiedTime ? await cached(`budget:${source.id}:${source.modifiedTime}`, 6 * 3_600_000, parse) : await parse();
     return { data, source };
+  }),
+);
+
+export type MenuData = { plan: MenuPlan | null; folder?: DriveItem };
+
+/**
+ * The Menüplan. `menuFileId` is the xlsx itself or the Küche folder; in a folder the
+ * newest table called "Menüplan …" is used, and none yet means: offer to create one.
+ */
+export const loadMenu = cache((camp: CampConfig) =>
+  attempt<MenuData>(async () => {
+    if (!camp.drive.menuFileId) throw new Error("Kein Menüplan-Ordner konfiguriert (drive.menuFileId).");
+    const item = await getItem(camp.drive.menuFileId);
+    let source: DriveItem | undefined = item;
+    if (item.isFolder) {
+      const tables = (await listChildren(item.id)).filter((f) => !f.isFolder && MENU_FILE.test(f.name) && (f.mimeType === XLSX || f.mimeType === "application/vnd.google-apps.spreadsheet"));
+      tables.sort((a, b) => (b.modifiedTime ?? "").localeCompare(a.modifiedTime ?? ""));
+      if (!tables[0]) return { data: { plan: null, folder: item } };
+      source = await getItem(tables[0].id); // fresh after the app wrote it (see resolveTableFile)
+    }
+    return { data: { plan: parseMenu(await gridOf(source)), folder: item.isFolder ? item : undefined }, source };
   }),
 );

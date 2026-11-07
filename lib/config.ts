@@ -24,6 +24,7 @@ const Camp = z.object({
     tnFileId: z.string().optional(), // file OR folder (newest xlsx/csv/Sheet inside is used)
     leiterFileId: z.string().optional(),
     budgetFileId: z.string().optional(), // Lagerbudget/Abrechnung xlsx, or its folder
+    menuFileId: z.string().optional(), // Menüplan xlsx, or the Küche folder (the app creates it there)
   }),
   ecampCampId: z.string().optional(), // id from the eCamp URL: app.ecamp3.ch/camps/<id>/...
   writeBack: z.boolean().default(false),

@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Calendar, Coins, Folder, Grid, Home, Users } from "./icons";
+import { Calendar, Coins, Folder, Grid, Home, Pot, Users } from "./icons";
 
 export function Nav({ slug }: { slug: string }) {
   const path = usePathname();
@@ -10,6 +10,7 @@ export function Nav({ slug }: { slug: string }) {
     { href: `/${slug}/termine`, label: "Termine", short: "Termine", icon: Calendar },
     { href: `/${slug}/personen`, label: "Teilnehmende & Leitende", short: "Personen", icon: Users },
     { href: `/${slug}/programm`, label: "Programm (eCamp)", short: "Programm", icon: Grid },
+    { href: `/${slug}/menue`, label: "Menüplan", short: "Menü", icon: Pot },
     { href: `/${slug}/budget`, label: "Budget & Abrechnung", short: "Budget", icon: Coins },
     { href: `/${slug}/ablage`, label: "Ablage", short: "Ablage", icon: Folder },
   ];

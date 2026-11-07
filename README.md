@@ -11,6 +11,7 @@ Drive bleibt die Quelle: Die App liest die bestehenden xlsx/csv/Google-Sheets un
 | **Termine** | `Lagerdaten.xlsx` | Timeline mit rot (überfällig) / orange (≤ 14 Tage), Filter nach «Wer», Abhaken schreibt `x` in die Spalte «Erledigt» |
 | **Teilnehmende & Leitende** | Liste oder Ordner im Drive | Karten/Tabelle, Suche, Filter nach Stufe, Hinweise (Allergien, Medis) hervorgehoben, Alter am Lagerbeginn, CSV-Export |
 | **Programm** | eCamp (nur lesen) | Blöcke pro Tag, nach Kategorie (Wölfli/Pfadi/Pio …) filterbar, Lagerteam |
+| **Menüplan** | `Menüplan …xlsx` im Küche-Ordner (legt die App an) | Ein Tag pro Karte mit Zmorge, Zmittag, Zvieri, Znacht und Bemerkungen direkt bearbeiten; Anzahl Personen und Ernährungshinweise (vegi, Allergien …) aus den TN-/Leiterlisten |
 | **Budget & Abrechnung** | Budget-xlsx im Drive (Vorlage PBS / Region Seldwyla) | Budget vs. Abrechnung pro Bereich, blaue (Budget) und grüne (Abrechnung) Felder direkt bearbeiten, Buchungen im Finanzjournal erfassen, ändern und löschen |
 | **Ablage** | Lagerordner im Drive | Ordnerstruktur `NN_Thema (Verantwortlich)` als Ressorts mit Verantwortlichen |
 
@@ -46,6 +47,7 @@ In `config/camps.json` pro Lager die Drive-IDs eintragen (die ID ist der letzte 
 - `termineFileId` – `Lagerdaten.xlsx`
 - `tnFileId` / `leiterFileId` – eine Datei **oder** ein Ordner (dann wird die neueste Tabelle darin genommen, praktisch für `121_TN Liste`)
 - `budgetFileId` – die Budget-/Abrechnungs-xlsx **oder** ihr Ordner (dann die neueste Tabelle mit «Budget» oder «Abrechnung» im Namen)
+- `menuFileId` – der Küche-Ordner (die App legt darin «Menüplan …xlsx» an, eine Zeile pro Lagertag) **oder** ein bestehender Menüplan
 - `ecampCampId` – optional
 - `writeBack` – `true` erlaubt das Abhaken von Terminen direkt in der xlsx (Drive behält alte Versionen im Versionsverlauf)
 
@@ -90,6 +92,7 @@ lib/tables.ts           xlsx/csv → Termine & Personen
 lib/ecamp.ts            eCamp v3 HAL-API (nur lesen)
 lib/budget.ts           Budget-xlsx → Budget, Abrechnung, Finanzjournal
 lib/formula.ts          kleiner Excel-Formelrechner (SUM, SUMIF, MROUND …)
+lib/menu.ts             Menüplan anlegen und lesen
 lib/xlsxpatch.ts        einzelne Zellen in eine xlsx schreiben, ohne den Rest anzufassen
 app/[camp]/…            Seiten: Übersicht, Termine, Personen, Programm, Ablage
 ```

@@ -61,6 +61,15 @@ function cellXml(ref: string, style: string, value: CellWrite["value"]) {
 const CELL = (ref: string) => new RegExp(`<c r="${ref}"(?=[\\s/>])([^>]*?)(?:/>|>([\\s\\S]*?)</c>)`);
 const ROW = (n: number) => new RegExp(`<row r="${n}"(?=[\\s/>])([^>]*?)(?:/>|>([\\s\\S]*?)</row>)`);
 
+/** The default style of a column, from <cols><col min max style>. */
+function colStyle(xml: string, col: number) {
+  for (const m of xml.matchAll(/<col\b[^>]*>/g)) {
+    const min = Number(m[0].match(/\bmin="(\d+)"/)?.[1]), max = Number(m[0].match(/\bmax="(\d+)"/)?.[1]);
+    if (col >= min && col <= max) return m[0].match(/\bstyle="(\d+)"/)?.[1] ?? "";
+  }
+  return "";
+}
+
 /** Applies the writes to one sheet's XML. Exported for tests. */
 export function patchSheetXml(xml: string, writes: CellWrite[]): string {
   for (const w of writes) {
@@ -78,8 +87,8 @@ export function patchSheetXml(xml: string, writes: CellWrite[]): string {
     if (rowMatch) {
       const attrs = rowMatch[1].replace(/\/$/, "");
       const body = rowMatch[2] ?? "";
-      // the column style (from <cols>) is not copied; the row's own style is
-      const style = attrs.match(/\bcustomFormat="1"/) ? attrs.match(/\bs="(\d+)"/)?.[1] ?? "" : "";
+      // a new cell looks like Excel would make it: the row's style, else the column's
+      const style = (attrs.match(/\bcustomFormat="1"/) ? attrs.match(/\bs="(\d+)"/)?.[1] : undefined) ?? colStyle(xml, col);
       const next = [...body.matchAll(/<c r="([A-Z]+)\d+"/g)].find((m) => colIndex(m[1]) > col);
       const insert = cellXml(ref, style, w.value);
       const newBody = next ? body.replace(next[0], insert + next[0]) : body + insert;
@@ -89,7 +98,7 @@ export function patchSheetXml(xml: string, writes: CellWrite[]): string {
     const sheetData = xml.match(/<sheetData\s*\/>|<sheetData>([\s\S]*?)<\/sheetData>/);
     if (!sheetData) throw new Error("Tabellenblatt ohne <sheetData>.");
     const body = sheetData[1] ?? "";
-    const newRow = `<row r="${row}">${cellXml(ref, "", w.value)}</row>`;
+    const newRow = `<row r="${row}">${cellXml(ref, colStyle(xml, col), w.value)}</row>`;
     const after = [...body.matchAll(/<row r="(\d+)"/g)].find((m) => Number(m[1]) > row);
     const newBody = after ? body.replace(after[0], newRow + after[0]) : body + newRow;
     xml = xml.replace(sheetData[0], `<sheetData>${newBody}</sheetData>`);

@@ -18,6 +18,13 @@ test("patchSheetXml: replaces, keeps the style, inserts cells and rows in order"
   assert.equal(excelSerial(new Date(Date.UTC(2027, 6, 19))), 46587);
 });
 
+test("patchSheetXml: a new cell gets its column's style", () => {
+  const xml = '<worksheet><cols><col min="1" max="2" width="9"/><col min="3" max="5" width="28" style="4" customWidth="1"/></cols><sheetData><row r="5"><c r="A5" s="2"><v>1</v></c></row></sheetData></worksheet>';
+  const out = patchSheetXml(xml, [{ ref: "D5", value: "Älplermagronen" }, { ref: "C7", value: "Zopf" }, { ref: "B5", value: 3 }]);
+  assert.match(out, /<c r="B5"><v>3<\/v><\/c><c r="D5" s="4" t="inlineStr">/);
+  assert.match(out, /<row r="7"><c r="C7" s="4" t="inlineStr">/);
+});
+
 test("patchSheetXml: refuses to overwrite the origin of a shared formula", () => {
   const xml = '<worksheet><sheetData><row r="1"><c r="A1"><f t="shared" ref="A1:A3" si="0">B1</f><v>0</v></c></row></sheetData></worksheet>';
   assert.throws(() => patchSheetXml(xml, [{ ref: "A1", value: 1 }]), /geteilten Formel/);

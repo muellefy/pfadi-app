@@ -388,3 +388,15 @@ table.data.journal .in { color: var(--forest); }
 table.data.journal td.actions { white-space: nowrap; text-align: right; }
 table.data.journal tfoot td { font-weight: 600; border-top: 2px solid var(--ink); }
 .form.booking { gap: 12px; }
+
+/* ---------- menüplan */
+.menu-days { grid-auto-columns: minmax(230px, 1fr); }
+.menu-days .day { padding: 12px 14px; display: grid; gap: 8px; align-content: start; }
+.menu-days .day h3 { position: static; padding: 0 0 4px; }
+.meal { display: grid; gap: 2px; }
+.meal > span { font-size: 13px; font-weight: 600; color: var(--muted); }
+.meal p { margin: 0; white-space: pre-wrap; }
+.meal textarea { font: inherit; color: inherit; resize: vertical; min-height: 2.6em; padding: 5px 8px; border: 1px solid var(--line); border-radius: 4px; background: var(--card); }
+.meal textarea:hover { border-color: var(--muted); }
+.meal textarea:focus { border-color: var(--forest); }
+.diet { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(260px, 100%), 1fr)); gap: 10px 16px; }

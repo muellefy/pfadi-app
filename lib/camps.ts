@@ -66,5 +66,6 @@ export function detectFiles(entries: CopiedEntry[]) {
     leiterFileId: find((e) => e.isFolder && /leiter.*liste|leiterliste/i.test(e.name)) ?? find((e) => !e.isFolder && isTable(e) && /leiter.*liste/i.test(e.name)),
     // the folder, so the newest budget file inside is used (also once it's renamed for the camp)
     budgetFileId: find((e) => e.isFolder && /budget|finanzen/i.test(e.name)) ?? find((e) => !e.isFolder && isTable(e) && /budget|abrechnung/i.test(e.name)),
+    menuFileId: find((e) => !e.isFolder && isTable(e) && /men(ü|ue|u)[\s_-]*plan/i.test(e.name)) ?? find((e) => e.isFolder && /küche|kueche|verpflegung/i.test(e.name)),
   };
 }

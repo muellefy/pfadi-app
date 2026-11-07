@@ -37,7 +37,9 @@ test("detectFiles: finds Lagerdaten and the people lists by name", () => {
   const e = (name: string, isFolder = false, mimeType = ""): CopiedEntry => ({ path: [], id: name, name, isFolder, mimeType });
   const found = detectFiles([
     e("01_Hauptleitung", true), e("Lagerdaten.xlsx"), e("12_TN - Infos", true), e("121_TN Liste", true), e("Leiterliste", true),
-    e("09_Lagerbudget", true),
+    e("09_Lagerbudget", true), e("08_Küche", true),
   ]);
-  assert.deepEqual(found, { termineFileId: "Lagerdaten.xlsx", tnFileId: "121_TN Liste", leiterFileId: "Leiterliste", budgetFileId: "09_Lagerbudget" });
+  assert.deepEqual(found, {
+    termineFileId: "Lagerdaten.xlsx", tnFileId: "121_TN Liste", leiterFileId: "Leiterliste", budgetFileId: "09_Lagerbudget", menuFileId: "08_Küche",
+  });
 });
