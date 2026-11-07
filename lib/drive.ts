@@ -91,7 +91,7 @@ export function listChildren(folderId: string): Promise<DriveItem[]> {
   return perPerson("list", folderId, () => listChildrenFresh(folderId));
 }
 
-async function listChildrenFresh(folderId: string): Promise<DriveItem[]> {
+export async function listChildrenFresh(folderId: string): Promise<DriveItem[]> {
   const drive = await client();
   const out: DriveItem[] = [];
   let pageToken: string | undefined;
@@ -189,6 +189,29 @@ export async function uploadFile(folderId: string, name: string, mimeType: strin
     supportsAllDrives: true,
   });
   forgetDrive(folderId);
+  return toItem(data);
+}
+
+export async function createFolder(name: string, parentId: string): Promise<DriveItem> {
+  const drive = await client();
+  const { data } = await drive.files.create({
+    requestBody: { name, mimeType: FOLDER, parents: [parentId] },
+    fields: FIELDS,
+    supportsAllDrives: true,
+  }, SMALL);
+  forgetDrive(parentId);
+  return toItem(data);
+}
+
+/** Copies a file (Google Docs/Sheets and uploaded files alike) into a folder. */
+export async function copyFile(id: string, name: string, parentId: string): Promise<DriveItem> {
+  const drive = await client();
+  const { data } = await drive.files.copy({
+    fileId: id,
+    requestBody: { name, parents: [parentId] },
+    fields: FIELDS,
+    supportsAllDrives: true,
+  }, { timeout: 120_000 });
   return toItem(data);
 }
 

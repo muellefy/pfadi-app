@@ -15,15 +15,14 @@ export default async function CampLayout({ children, params }: { children: React
   return (
     <div className="shell">
       <aside className="side">
-        <Link href="/" className="brand"><Tent size={22} /> {config.organisation}</Link>
-        {config.camps.length > 1 && (
-          <div className="camp-switch">
-            <span className="label">Lager</span>
-            {config.camps.map((c) => (
-              <Link key={c.slug} href={`/${c.slug}`} aria-current={c.slug === slug}>{c.name}</Link>
-            ))}
-          </div>
-        )}
+        <Link href="/lager" className="brand"><Tent size={22} /> {config.organisation}</Link>
+        <nav className="camp-switch" aria-label="Lager">
+          <span className="label">Lager</span>
+          {config.camps.map((c) => (
+            <Link key={c.slug} href={`/${c.slug}`} aria-current={c.slug === slug}>{c.name}</Link>
+          ))}
+          <Link href="/lager" className="all">Alle Lager / neues Lager</Link>
+        </nav>
         <Nav slug={slug} />
         <div className="me">
           <span>{session?.user?.name ?? session?.user?.email}</span>

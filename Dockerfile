@@ -25,8 +25,9 @@ ENV NODE_ENV=production \
     HOSTNAME=0.0.0.0 \
     PORT=3000 \
     CAMPS_CONFIG=/app/config/camps.json \
+    DATA_DIR=/app/data \
     TZ=Europe/Zurich
-RUN addgroup -S app && adduser -S app -G app
+RUN addgroup -S app && adduser -S app -G app && mkdir -p /app/data && chown app:app /app/data
 COPY --from=build --chown=app:app /app/.next/standalone ./
 COPY --from=build --chown=app:app /app/.next/static ./.next/static
 COPY --from=build --chown=app:app /app/config/camps.example.json ./config/camps.example.json

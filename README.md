@@ -6,6 +6,7 @@ Drive bleibt die Quelle: Die App liest die bestehenden xlsx/csv/Google-Sheets un
 
 | Bereich | Quelle | Was die App macht |
 |---|---|---|
+| **Alle Lager** | `camps.json` + in der App angelegte | Alle Lager mit Daten und Countdown, «aktuelles Lager» pro Person wählen, neues Lager aus der Vorlage anlegen |
 | **Übersicht** | alles | Countdown, nächste Fristen, Zahlen, Ressort-Kacheln |
 | **Termine** | `Lagerdaten.xlsx` | Timeline mit rot (überfällig) / orange (≤ 14 Tage), Filter nach «Wer», Abhaken schreibt `x` in die Spalte «Erledigt» |
 | **Teilnehmende & Leitende** | Liste oder Ordner im Drive | Karten/Tabelle, Suche, Filter nach Stufe, Hinweise (Allergien, Medis) hervorgehoben, Alter am Lagerbeginn, CSV-Export |
@@ -47,6 +48,14 @@ In `config/camps.json` pro Lager die Drive-IDs eintragen (die ID ist der letzte 
 - `writeBack` – `true` erlaubt das Abhaken von Terminen direkt in der xlsx (Drive behält alte Versionen im Versionsverlauf)
 
 Weitere Lager (z. B. HeLa 27) einfach als weiteres Objekt in `camps` ergänzen – keine Neuinstallation nötig.
+
+#### Neues Lager in der App anlegen
+
+Unter **Alle Lager → Neues Lager anlegen** kopiert die App die Ordnerstruktur der Vorlage (`templateFolderId` in `camps.json`, im Formular änderbar) samt Dateien in einen Drive-Ordner deiner Wahl – mit deinem Google-Konto, du brauchst also Leserechte auf die Vorlage und Schreibrechte am Zielort. Lagerdaten, TN- und Leiterliste werden in der Kopie am Namen erkannt.
+
+In der App angelegte Lager speichert sie in `/app/data/camps.json` (Docker-Volume `app_data`), weil `config/camps.json` nur lesend eingebunden ist. Ändern: `docker compose exec app vi /app/data/camps.json` – oder den Eintrag nach `config/camps.json` übernehmen; bei gleichem `slug` gewinnt `config/camps.json`.
+
+`/` öffnet das Lager, das du unter «Alle Lager» als aktuell gewählt hast (gespeichert als Cookie in deinem Browser), sonst das laufende oder nächste.
 
 Die TN-/Leiterlisten dürfen beliebige Spalten haben (MiData-Export, Anmeldeformular …). Spalten wie *Vorname, Nachname, Pfadiname/Übername, Stufe, Geburtsdatum, Telefon, E-Mail* werden automatisch erkannt; Spalten mit *Allergie, Medikamente, Unverträglichkeit, Bemerkung …* werden als Hinweise hervorgehoben.
 
