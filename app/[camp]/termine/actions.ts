@@ -1,7 +1,7 @@
 "use server";
 import { revalidatePath } from "next/cache";
 import { getCamp } from "@/lib/config";
-import { download, getItem, uploadNewRevision } from "@/lib/drive";
+import { download, getItemFresh, uploadNewRevision } from "@/lib/drive";
 import { serialize } from "@/lib/lock";
 import { parseTermine, setErledigt, toGrid } from "@/lib/tables";
 
@@ -21,7 +21,7 @@ export async function toggleTermin(slug: string, row: number, was: string, done:
   const fileId = camp.drive.termineFileId;
   try {
     return await serialize(fileId, async () => {
-      const item = await getItem(fileId);
+      const item = await getItemFresh(fileId);
       if (item.mimeType !== "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet") {
         return { ok: false, error: "Nur .xlsx-Dateien können direkt bearbeitet werden." };
       }
@@ -32,7 +32,7 @@ export async function toggleTermin(slug: string, row: number, was: string, done:
       if (sheet.erledigtCol < 1) return { ok: false, error: "Keine Spalte «Erledigt» gefunden." };
       const updated = await setErledigt(file.buffer, row, sheet.erledigtCol, done);
       // shortcut: Drive v3 has no conditional upload, so a tiny window between this check and the upload remains
-      if ((await getItem(fileId)).modifiedTime !== item.modifiedTime) return { ok: false, error: CHANGED };
+      if ((await getItemFresh(fileId)).modifiedTime !== item.modifiedTime) return { ok: false, error: CHANGED };
       await uploadNewRevision(fileId, updated);
       revalidatePath(`/${slug}`, "layout");
       return { ok: true };

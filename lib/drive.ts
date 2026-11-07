@@ -3,6 +3,7 @@ import { auth as gauth, drive as gdrive, type drive_v3 } from "@googleapis/drive
 import { Readable } from "node:stream";
 import { cache } from "react";
 import { auth } from "@/auth";
+import { cached, forget } from "./cache";
 import { googleExport, previewKind } from "./files";
 
 /** For small metadata/table requests: a stalled call must not hold the Termine write lock forever. Not for streamed files. */
@@ -32,13 +33,32 @@ export class AuthError extends Error {}
  * Drive client acting as the logged-in user (their permissions, not a service account).
  * Built once per request; outside a React render (route handlers) cache() just calls through.
  */
-const client = cache(async (): Promise<drive_v3.Drive> => {
-  const session = await auth();
-  if (!session?.accessToken || session.error) throw new AuthError("Google-Sitzung abgelaufen – bitte neu anmelden.");
+const session = cache(async () => {
+  const s = await auth();
+  if (!s?.accessToken || s.error) throw new AuthError("Google-Sitzung abgelaufen – bitte neu anmelden.");
   const oauth = new gauth.OAuth2();
-  oauth.setCredentials({ access_token: session.accessToken });
-  return gdrive({ version: "v3", auth: oauth });
+  oauth.setCredentials({ access_token: s.accessToken });
+  return { drive: gdrive({ version: "v3", auth: oauth }), who: (s.user?.email ?? s.accessToken).toLowerCase() };
 });
+const client = async (): Promise<drive_v3.Drive> => (await session()).drive;
+
+/**
+ * File and folder metadata, cached *per person* (so Drive still decides who sees what):
+ * fresh for 20 s, then served stale for up to 10 min while it reloads in the background.
+ * Clicking around therefore never waits for Drive; a change made directly in Drive
+ * shows up on the next-but-one page load at the latest.
+ */
+const META_TTL = 20_000;
+const META_STALE = 10 * 60_000;
+async function perPerson<T>(kind: string, id: string, fn: () => Promise<T>): Promise<T> {
+  const { who } = await session();
+  return cached(`${kind}:${who}:${id}`, META_TTL, fn, META_STALE);
+}
+
+/** Call after the app changed something in a folder or file, so the next page shows it. */
+export function forgetDrive(id: string) {
+  forget((k) => (k.startsWith("item:") || k.startsWith("list:")) && k.endsWith(`:${id}`));
+}
 
 const FIELDS = "id,name,mimeType,modifiedTime,webViewLink,size,lastModifyingUser(displayName),capabilities(canAddChildren)";
 
@@ -56,13 +76,22 @@ function toItem(f: drive_v3.Schema$File): DriveItem {
   };
 }
 
-export async function getItem(id: string): Promise<DriveItem> {
+export function getItem(id: string): Promise<DriveItem> {
+  return perPerson("item", id, () => getItemFresh(id));
+}
+
+/** Straight from Drive, no cache: for write paths that must compare modifiedTime. */
+export async function getItemFresh(id: string): Promise<DriveItem> {
   const drive = await client();
   const { data } = await drive.files.get({ fileId: id, fields: FIELDS, supportsAllDrives: true }, SMALL);
   return toItem(data);
 }
 
-export async function listChildren(folderId: string): Promise<DriveItem[]> {
+export function listChildren(folderId: string): Promise<DriveItem[]> {
+  return perPerson("list", folderId, () => listChildrenFresh(folderId));
+}
+
+async function listChildrenFresh(folderId: string): Promise<DriveItem[]> {
   const drive = await client();
   const out: DriveItem[] = [];
   let pageToken: string | undefined;
@@ -159,6 +188,7 @@ export async function uploadFile(folderId: string, name: string, mimeType: strin
     fields: FIELDS,
     supportsAllDrives: true,
   });
+  forgetDrive(folderId);
   return toItem(data);
 }
 
@@ -170,6 +200,7 @@ export async function uploadNewRevision(id: string, buffer: Buffer) {
     supportsAllDrives: true,
     media: { mimeType: XLSX, body: Readable.from(buffer) },
   }, SMALL);
+  forgetDrive(id);
 }
 
 /** "06_Lagerbauten (Kenai)" → { nr: "06", title: "Lagerbauten", owner: "Kenai" } */
