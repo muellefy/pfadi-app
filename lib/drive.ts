@@ -124,7 +124,9 @@ export async function resolveTableFile(id: string, prefer?: RegExp): Promise<Dri
   if (!item.isFolder) return item;
   const tables = (await listChildren(id)).filter((f) => TABLE_TYPES.includes(f.mimeType) || /\.(csv|xlsx)$/i.test(f.name));
   tables.sort((a, b) => (b.modifiedTime ?? "").localeCompare(a.modifiedTime ?? ""));
-  return (prefer && tables.find((t) => prefer.test(t.name))) || tables[0] || null;
+  const chosen = (prefer && tables.find((t) => prefer.test(t.name))) || tables[0];
+  // the file's own entry, not the folder listing's: that one is dropped when the app writes the file
+  return chosen ? getItem(chosen.id) : null;
 }
 
 export type Downloaded = { buffer: Buffer; format: "xlsx" | "csv" };
