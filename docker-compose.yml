@@ -1,6 +1,6 @@
 services:
   app:
-    image: lostiboy7/pfadi-app:latest
+    image: lostiboy7/pfadi-app:develop
     restart: unless-stopped
     env_file: .env
     environment:
