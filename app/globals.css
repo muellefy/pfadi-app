@@ -19,10 +19,39 @@
   --amber: #a86a00;
   --amber-soft: #fbeccb;
   --done: #8b978f;
-  --radius: 6px;
+  --radius: 8px;     /* controls: buttons, inputs, chips */
+  --radius-lg: 12px; /* surfaces: cards, hero, dialogs */
   --display: "Barlow Condensed", "Arial Narrow", sans-serif;
   --sans: "Source Sans 3 Variable", "Source Sans 3", ui-sans-serif, system-ui, sans-serif;
+
+  /*
+   * Motion. Springs rather than fixed curves (Apple, "Designing Fluid Interfaces"):
+   * --spring is critically damped (damping 1.0, response 0.35s): settles without overshoot, the default.
+   * --spring-bounce (damping 0.8) is only for something the user just committed, like ticking a box.
+   * Precomputed as linear() curves; browsers without linear() fall back to plain ease-out.
+   */
+  --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --spring: var(--ease-out);
+  --spring-bounce: var(--ease-out);
+  --spring-time: 500ms;
+  --press: 90ms; /* press feedback is near instant: it shows on pointer-down, not on release */
+
+  /* depth: larger surfaces cast deeper, softer shadows */
+  --shadow-sm: 0 1px 2px rgb(20 48 42 / 0.06), 0 1px 1px rgb(20 48 42 / 0.04);
+  --shadow-md: 0 6px 20px -6px rgb(20 48 42 / 0.18), 0 2px 6px -2px rgb(20 48 42 / 0.08);
+  --shadow-lg: 0 24px 64px -16px rgb(10 24 19 / 0.35), 0 8px 20px -8px rgb(10 24 19 / 0.2);
+
+  /* translucent chrome: content scrolls underneath and stays faintly visible */
+  --material: color-mix(in srgb, var(--card) 72%, transparent);
+  --material-line: color-mix(in srgb, var(--ink) 10%, transparent);
+  --scrim: rgb(10 24 19 / 0.45);
   color-scheme: light;
+}
+@supports (transition-timing-function: linear(0, 1)) {
+  :root {
+    --spring: linear(0, 0.058, 0.181, 0.321, 0.456, 0.574, 0.672, 0.751, 0.813, 0.861, 0.897, 0.924, 0.945, 0.96, 0.971, 0.979, 0.985, 0.989, 0.992, 0.994, 0.996, 0.997, 0.998, 0.999, 1);
+    --spring-bounce: linear(0, 0.052, 0.171, 0.317, 0.464, 0.599, 0.713, 0.805, 0.876, 0.928, 0.964, 0.988, 1.003, 1.011, 1.014, 1.015, 1.014, 1.012, 1.01, 1.008, 1.006, 1.004, 1.003, 1.002, 1);
+  }
 }
 @media (prefers-color-scheme: dark) {
   :root {
@@ -40,6 +69,11 @@
     --amber: #e9a93a;
     --amber-soft: #352a12;
     --done: #66756c;
+    --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.3);
+    --shadow-md: 0 8px 24px -8px rgb(0 0 0 / 0.55), 0 2px 6px -2px rgb(0 0 0 / 0.3);
+    --shadow-lg: 0 24px 64px -16px rgb(0 0 0 / 0.7), 0 8px 20px -8px rgb(0 0 0 / 0.4);
+    --material-line: color-mix(in srgb, var(--ink) 12%, transparent);
+    --scrim: rgb(0 0 0 / 0.55);
     color-scheme: dark;
   }
 }
@@ -49,20 +83,27 @@ html, body { margin: 0; }
 body {
   background: var(--paper);
   color: var(--ink);
-  font: 16px/1.5 var(--sans);
+  font: 1rem/1.5 var(--sans); /* rem: follows the user's own text size setting */
   -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent; /* we draw our own press state instead of the grey flash */
+  transition: background-color 300ms ease, color 300ms ease; /* no hard jump when the theme switches */
 }
 a { color: inherit; text-underline-offset: 3px; }
-h1, h2, h3 { font-family: var(--display); font-weight: 600; letter-spacing: 0.005em; line-height: 1.1; margin: 0; }
-h1 { font-size: clamp(34px, 5vw, 48px); font-weight: 700; }
-h2 { font-size: 24px; }
+a, button, summary, label { touch-action: manipulation; } /* no double-tap-zoom wait on taps */
+/* tracking depends on size: large display type is pulled together, small labels opened up a little */
+h1, h2, h3 { font-family: var(--display); font-weight: 600; letter-spacing: 0; line-height: 1.1; margin: 0; text-wrap: balance; }
+h1 { font-size: clamp(34px, 5vw, 48px); font-weight: 700; line-height: 1; letter-spacing: -0.01em; }
+h2 { font-size: 24px; line-height: 1.05; }
 h3 { font-size: 19px; }
+p { text-wrap: pretty; }
 button, input, select { font: inherit; color: inherit; }
 :focus-visible { outline: 3px solid var(--trail); outline-offset: 2px; border-radius: 3px; }
 
 /* ---------- shell */
 .shell { display: grid; grid-template-columns: 236px minmax(0, 1fr); min-height: 100dvh; }
 .side {
+  /* structural region: a slightly heavier material than the page, so it reads as its own layer */
+  background: color-mix(in srgb, var(--forest-soft) 35%, var(--paper));
   border-right: 1px solid var(--line);
   padding: 20px 12px;
   position: sticky; top: 0; height: 100dvh;
@@ -76,7 +117,9 @@ button, input, select { font: inherit; color: inherit; }
 .nav a, .camp-switch a {
   display: flex; align-items: center; gap: 10px;
   padding: 7px 10px; border-radius: var(--radius); text-decoration: none; color: var(--muted);
+  transition: color 150ms ease, background-color 150ms ease, box-shadow 200ms ease, transform var(--spring-time) var(--spring);
 }
+.nav a svg { transition: transform var(--spring-time) var(--spring), color 150ms ease; }
 .nav a:hover, .camp-switch a:hover { color: var(--ink); background: var(--forest-soft); }
 .nav a[aria-current="page"], .camp-switch a[aria-current="true"] { color: var(--ink); font-weight: 600; background: var(--forest-soft); box-shadow: inset 3px 0 0 var(--forest); }
 .nav a[aria-current="page"] svg { color: var(--forest); }
@@ -91,25 +134,36 @@ button, input, select { font: inherit; color: inherit; }
   .side {
     position: static; height: auto; display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center;
     gap: 8px 12px; padding: 10px 16px; border-right: 0; border-bottom: 1px solid var(--line);
+    background: var(--paper);
   }
   .brand { padding: 0; font-size: 19px; }
   .side .me { grid-column: 2; grid-row: 1; margin: 0; padding: 0; display: block; }
   .side .me span { display: none; }
   .camp-switch { grid-column: 1 / -1; flex-direction: row; gap: 6px; overflow-x: auto; scrollbar-width: none; }
   .camp-switch .label { display: none; }
-  .camp-switch a { padding: 4px 12px; border: 1px solid var(--line); background: var(--card); white-space: nowrap; }
+  .camp-switch { scroll-snap-type: x proximity; }
+  .camp-switch a { padding: 4px 12px; border: 1px solid var(--line); border-radius: 999px; background: var(--card); white-space: nowrap; scroll-snap-align: start; }
   .camp-switch a[aria-current="true"] { box-shadow: none; background: var(--ink); border-color: var(--ink); color: var(--paper); }
   .nav {
     position: fixed; z-index: 20; left: 0; right: 0; bottom: 0;
     display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 2px;
     padding: 4px 4px calc(4px + env(safe-area-inset-bottom));
-    background: var(--card); border-top: 1px solid var(--line);
+    /* a translucent layer floating above the page: content stays faintly visible as it scrolls under */
+    background: var(--material);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    backdrop-filter: blur(20px) saturate(180%);
+    border-top: 1px solid var(--material-line);
   }
-  .nav a { flex-direction: column; justify-content: center; gap: 2px; min-height: 52px; padding: 4px 1px; font-size: 11.5px; text-align: center; }
+  .nav a { flex-direction: column; justify-content: center; gap: 2px; min-height: 52px; padding: 4px 1px; font-size: 11.5px; letter-spacing: 0.01em; text-align: center; }
+  .nav a:hover { background: transparent; }
   .nav a svg { width: 22px; height: 22px; }
   .nav .long { display: none; }
   .nav .short { display: inline; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .nav a[aria-current="page"] { box-shadow: none; color: var(--forest); }
+  /* over the translucent bar, text gets more weight instead of flat grey */
+  .nav a { color: color-mix(in srgb, var(--muted) 80%, var(--ink)); font-weight: 500; }
+  .nav a[aria-current="page"] { box-shadow: none; background: transparent; color: var(--forest); font-weight: 600; }
+  .nav a[aria-current="page"] svg { transform: translateY(-1px) scale(1.06); }
+  .nav a:active svg { transform: scale(0.88); transition-duration: var(--press); transition-timing-function: ease-out; }
   .main { padding: 20px 16px calc(84px + env(safe-area-inset-bottom)); }
 }
 
@@ -122,10 +176,10 @@ button, input, select { font: inherit; color: inherit; }
 }
 
 /* ---------- building blocks */
-.eyebrow { font-size: 14px; color: var(--muted); font-weight: 600; margin-bottom: 2px; }
+.eyebrow { font-size: 14px; color: var(--muted); font-weight: 600; letter-spacing: 0.01em; margin-bottom: 2px; }
 .page-head { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 16px; margin-bottom: 24px; }
 .page-head p { margin: 6px 0 0; color: var(--muted); max-width: 60ch; }
-.card { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 18px 20px; }
+.card { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius-lg); padding: 18px 20px; box-shadow: var(--shadow-sm); }
 .card-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 12px; margin-bottom: 10px; }
 .card-head a { font-size: 14px; color: var(--forest); font-weight: 600; text-decoration: none; }
 .card-head a:hover { text-decoration: underline; }
@@ -134,7 +188,7 @@ button, input, select { font: inherit; color: inherit; }
 .grid-3 { grid-template-columns: repeat(auto-fit, minmax(min(240px, 100%), 1fr)); }
 .muted { color: var(--muted); }
 .small { font-size: 14px; }
-.pill { display: inline-flex; align-items: center; gap: 6px; padding: 1px 8px; border-radius: 4px; font-size: 13px; font-weight: 600; background: var(--forest-soft); color: var(--forest); white-space: nowrap; }
+.pill { display: inline-flex; align-items: center; gap: 6px; padding: 1px 9px; border-radius: 999px; font-size: 13px; font-weight: 600; letter-spacing: 0.01em; background: var(--forest-soft); color: var(--forest); white-space: nowrap; }
 .pill.khaki { background: var(--khaki-soft); color: var(--khaki); }
 .pill.rust { background: var(--rust-soft); color: var(--rust); }
 .pill.amber { background: var(--amber-soft); color: var(--amber); }
@@ -142,14 +196,44 @@ button, input, select { font: inherit; color: inherit; }
 .btn {
   display: inline-flex; align-items: center; gap: 8px; cursor: pointer;
   border: 1px solid var(--line); background: var(--card); padding: 7px 14px; border-radius: var(--radius); text-decoration: none; font-size: 15px; font-weight: 600;
+  box-shadow: var(--shadow-sm);
+  transition: color 150ms ease, background-color 150ms ease, border-color 150ms ease, filter 150ms ease, transform var(--spring-time) var(--spring);
 }
 .btn:hover { border-color: var(--forest); color: var(--forest); }
 .btn.primary { background: var(--forest); border-color: var(--forest); color: var(--paper); }
 .btn.primary:hover { color: var(--paper); filter: brightness(1.08); }
+.btn.ghost, .btn.small { box-shadow: none; }
 .btn.ghost { border-color: transparent; background: transparent; padding: 4px 8px; font-weight: 400; }
 .btn.small { font-size: 14px; padding: 2px 0; }
 .btn:disabled { opacity: 0.6; cursor: progress; }
-.notice { border: 1px dashed var(--line); border-radius: var(--radius); padding: 14px 16px; color: var(--muted); font-size: 15px; }
+
+/*
+ * Press feedback: everything tappable reacts the instant the pointer goes down (not on release),
+ * shrinking a touch fast, then springing back when released. Releasing mid-way just re-targets
+ * the transition from wherever it is, so it never jumps.
+ */
+:is(.btn, .chip, .tabs a, .tabs button, .camp-switch a, .check, .file-link):active:not(:disabled) {
+  transform: scale(0.96);
+  transition-duration: var(--press);
+  transition-timing-function: ease-out;
+}
+:is(.chip, .tabs a, .tabs button, .check, .file-link, .ressort, .camp-card, .block, .facts a, .search, .cell, .form input, .form select, .form textarea, .meal textarea) {
+  transition: color 150ms ease, background-color 150ms ease, border-color 150ms ease, box-shadow 200ms ease, opacity 200ms ease, transform var(--spring-time) var(--spring);
+}
+
+/* focus on text fields: a soft halo in the action colour appears at once, no layout shift */
+:is(.search, .cell, .form input, .form select, .form textarea, .meal textarea):focus {
+  outline: none; border-color: var(--forest);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--forest) 22%, transparent);
+}
+
+/* lift on hover only where a real pointer can hover, so taps on phones don't leave cards stuck "raised" */
+@media (hover: hover) {
+  :is(.ressort, .camp-card):hover { box-shadow: var(--shadow-md); transform: translateY(-2px); }
+  .block:hover { box-shadow: var(--shadow-sm); }
+}
+:is(.ressort, .camp-card, .block, .facts a):active { transform: scale(0.985); transition-duration: var(--press); transition-timing-function: ease-out; }
+.notice { border: 1px dashed var(--line); border-radius: var(--radius-lg); padding: 14px 16px; color: var(--muted); font-size: 15px; }
 .notice.error { border: 1px solid var(--rust); border-left-width: 4px; color: var(--ink); background: var(--rust-soft); }
 .source { font-size: 13px; color: var(--muted); }
 .source a { color: var(--muted); }
@@ -158,10 +242,10 @@ button, input, select { font: inherit; color: inherit; }
 .hero {
   display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 28px 40px; align-items: end;
   padding: 28px clamp(20px, 3vw, 36px) 0; margin-bottom: 18px;
-  background: var(--forest-soft); border-radius: var(--radius);
+  background: var(--forest-soft); border-radius: var(--radius-lg);
 }
 .hero .camp { padding-bottom: 28px; }
-.hero h1 { font-size: clamp(48px, 8vw, 88px); line-height: 0.9; letter-spacing: -0.01em; }
+.hero h1 { font-size: clamp(48px, 8vw, 88px); line-height: 0.9; letter-spacing: -0.02em; }
 .hero .motto { margin: 10px 0 0; font-size: 19px; }
 .hero .when { margin: 4px 0 0; color: var(--muted); }
 
@@ -229,6 +313,9 @@ button, input, select { font: inherit; color: inherit; }
 .check { width: 24px; height: 24px; border-radius: 4px; border: 2px solid var(--line); background: var(--card); display: grid; place-items: center; cursor: pointer; padding: 0; }
 .check:hover:not(:disabled) { border-color: var(--forest); }
 .check[aria-pressed="true"] { background: var(--forest); border-color: var(--forest); color: var(--paper); }
+/* the tick is a commit the user just made: it lands with a small spring overshoot */
+.check svg { transition: transform var(--spring-time) var(--spring-bounce), opacity 150ms ease; }
+@starting-style { .check svg { transform: scale(0.3); opacity: 0; } }
 .check:disabled { cursor: default; opacity: 0.6; }
 .timeline-bar { display: flex; height: 8px; border-radius: 2px; overflow: hidden; background: var(--line); margin: 8px 0 4px; }
 .timeline-bar i { display: block; }
@@ -260,9 +347,23 @@ button, input, select { font: inherit; color: inherit; }
 .upload-row .name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .upload-row progress { width: min(40%, 220px); accent-color: var(--forest); }
 
+/*
+ * The preview is a modal task: dim and blur the page behind it to focus, and let the sheet
+ * materialise (scale + blur + fade together) instead of popping. It leaves along the same path it came.
+ */
 dialog.preview { padding: 0; border: 0; background: transparent; width: min(1100px, 96vw); height: 92dvh; max-width: none; max-height: none; }
-dialog.preview::backdrop { background: rgba(10, 24, 19, 0.6); }
-.preview-box { display: flex; flex-direction: column; height: 100%; background: var(--card); color: var(--ink); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
+dialog.preview::backdrop { background: var(--scrim); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
+dialog.preview, dialog.preview::backdrop {
+  transition: opacity 250ms ease, transform var(--spring-time) var(--spring), filter 250ms ease,
+    overlay 250ms allow-discrete, display 250ms allow-discrete;
+}
+dialog.preview:not([open]) { opacity: 0; transform: translateY(12px) scale(0.97); filter: blur(4px); }
+dialog.preview:not([open])::backdrop { opacity: 0; }
+@starting-style {
+  dialog.preview[open] { opacity: 0; transform: translateY(12px) scale(0.97); filter: blur(4px); }
+  dialog.preview[open]::backdrop { opacity: 0; }
+}
+.preview-box { display: flex; flex-direction: column; height: 100%; background: var(--card); color: var(--ink); border: 1px solid var(--line); border-radius: var(--radius-lg); overflow: hidden; box-shadow: var(--shadow-lg); }
 .preview-box header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 14px; border-bottom: 1px solid var(--line); }
 .preview-box header b { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1 1 200px; }
 .preview-box iframe { flex: 1; width: 100%; border: 0; background: #fff; }
@@ -273,10 +374,10 @@ dialog.preview::backdrop { background: rgba(10, 24, 19, 0.6); }
 
 /* ---------- people */
 .toolbar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 14px; }
-.search { flex: 1 1 240px; min-width: 0; padding: 8px 12px; border-radius: var(--radius); border: 1px solid var(--line); background: var(--card); }
+.search { flex: 1 1 240px; min-width: 0; padding: 8px 14px; border-radius: 999px; border: 1px solid var(--line); background: var(--card); }
 .search:focus { border-color: var(--forest); }
 .chips { display: flex; flex-wrap: wrap; gap: 6px; }
-.chip { border: 1px solid var(--line); background: var(--card); padding: 3px 11px; border-radius: 4px; font-size: 14px; cursor: pointer; }
+.chip { border: 1px solid var(--line); background: var(--card); padding: 3px 12px; border-radius: 999px; font-size: 14px; cursor: pointer; }
 .chip:hover { border-color: var(--forest); }
 .chip[aria-pressed="true"] { background: var(--ink); color: var(--paper); border-color: var(--ink); }
 .tabs { display: inline-flex; border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
@@ -291,7 +392,7 @@ dialog.preview::backdrop { background: rgba(10, 24, 19, 0.6); }
 .person dt { color: var(--muted); }
 .person dd { margin: 0; overflow-wrap: anywhere; }
 .flag { background: var(--amber-soft); color: var(--ink); border-left: 3px solid var(--amber); padding: 6px 9px; border-radius: 0 4px 4px 0; font-size: 14px; margin-top: 4px; }
-.table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: var(--radius); background: var(--card); }
+.table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: var(--radius-lg); background: var(--card); box-shadow: var(--shadow-sm); }
 table.data { border-collapse: collapse; width: 100%; font-size: 14px; }
 table.data th { text-align: left; font-weight: 600; padding: 10px 12px; border-bottom: 1px solid var(--line); position: sticky; top: 0; background: var(--card); white-space: nowrap; cursor: pointer; user-select: none; }
 table.data td { padding: 8px 12px; border-top: 1px solid var(--line); white-space: nowrap; max-width: 320px; overflow: hidden; text-overflow: ellipsis; }
@@ -309,7 +410,7 @@ table.data tr:hover td { background: var(--forest-soft); }
 @media (max-width: 600px) { .days { grid-auto-columns: 78%; } } /* the next day peeks in, so it's clear you can swipe */
 .day h3 { font-size: 21px; padding: 6px 2px 10px; position: sticky; top: 0; }
 .day h3 small { display: block; font-family: var(--sans); font-weight: 400; color: var(--muted); font-size: 14px; }
-.block { display: block; text-decoration: none; padding: 8px 10px; border-radius: 4px; margin-bottom: 6px; background: var(--card); border: 1px solid var(--line); border-left: 5px solid var(--c, var(--forest)); font-size: 14px; }
+.block { display: block; text-decoration: none; padding: 8px 10px; border-radius: 6px; margin-bottom: 6px; background: var(--card); border: 1px solid var(--line); border-left: 5px solid var(--c, var(--forest)); font-size: 14px; }
 .block:hover { border-color: var(--c); }
 .block .t { font-variant-numeric: tabular-nums; color: var(--muted); font-size: 13px; }
 .block b { display: block; font-weight: 600; line-height: 1.3; }
@@ -322,14 +423,36 @@ table.data tr:hover td { background: var(--forest-soft); }
 .login { min-height: 100dvh; display: grid; place-items: center; padding: 24px; }
 .login .card { max-width: 420px; width: 100%; padding: 32px; text-align: center; display: grid; gap: 14px; }
 
-.loading { color: var(--muted); padding: 24px 0; }
-
-@media (prefers-reduced-motion: reduce) {
-  * { transition: none !important; animation: none !important; }
-}
+/* only show the loading text if loading actually takes a moment, so fast pages don't flash it */
+.loading { color: var(--muted); padding: 24px 0; animation: appear 200ms ease 300ms both; }
+@keyframes appear { from { opacity: 0; } }
 
 .facts.skeleton { min-height: 76px; background: linear-gradient(90deg, transparent, var(--forest-soft), transparent) 0 0 / 200% 100%; animation: shimmer 1.4s linear infinite; }
 @keyframes shimmer { to { background-position: -200% 0; } }
+
+/*
+ * Accessibility settings. Reduced motion keeps feedback but swaps movement for gentle fades:
+ * no scaling, sliding, overshoot or shimmer, while colour and opacity changes stay.
+ */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { scroll-behavior: auto !important; }
+  :is(.btn, .chip, .tabs a, .tabs button, .camp-switch a, .check, .file-link, .ressort, .camp-card, .block, .facts a):is(:active, :hover),
+  .nav a svg, .check svg, dialog.preview:not([open]) { transform: none !important; }
+  @starting-style { .check svg, dialog.preview[open] { transform: none !important; } }
+  dialog.preview:not([open]) { filter: none; }
+  @starting-style { dialog.preview[open] { filter: none; } }
+  .facts.skeleton { animation: none; background: var(--forest-soft); }
+}
+/* reduced transparency: translucent layers turn solid */
+@media (prefers-reduced-transparency: reduce) {
+  .nav { background: var(--card) !important; -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
+  dialog.preview::backdrop { -webkit-backdrop-filter: none; backdrop-filter: none; background: rgb(10 24 19 / 0.8); }
+}
+/* more contrast: firmer lines and muted text closer to ink */
+@media (prefers-contrast: more) {
+  :root { --line: color-mix(in srgb, var(--ink) 45%, var(--paper)); --muted: color-mix(in srgb, var(--ink) 80%, var(--paper)); --material-line: var(--line); }
+  .nav { background: var(--card) !important; -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
+}
 
 /* ---------- camps overview and forms */
 .solo { min-height: 100dvh; }
