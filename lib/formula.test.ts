@@ -35,3 +35,12 @@ test("unsupported functions and cycles throw", () => {
   assert.throws(() => ev.cell("S", "A1"), FormulaError);
   assert.throws(() => ev.cell("S", "B1"), FormulaError);
 });
+
+test("whole-column ranges (SUMIF(Finanzjournal!$F:$F, …))", () => {
+  const ev = new Evaluator(sheets({
+    J: { F4: "Kategorie", F5: "Miete", H5: 100, F6: "Essen", H6: 20, F7: "Miete", H7: 5 },
+    B: { A1: "Miete", B1: "=SUMIF(J!$F:$F,A1,J!H:H)", B2: "=SUM(J!H:H)" },
+  }));
+  assert.equal(ev.cell("B", "B1"), 105);
+  assert.equal(ev.cell("B", "B2"), 125);
+});

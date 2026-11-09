@@ -3,14 +3,17 @@ import { Evaluator, FormulaError, type Scalar, type Sheets } from "./formula.ts"
 
 /**
  * Reads a camp budget workbook in the layout of the PBS / Region Seldwyla template
- * ("Lagerbudget_Lagerabrechnung" + "Finanzjournal" + "Referenzen"):
+ * ("Lagerbudget_Lagerabrechnung" + "Finanzjournal" + "Referenzen"), or the similar
+ * Google-Sheets one ("Lagerbudget" + "Finanzjournal" + "Berechnung", labels in column D,
+ * no grey group rows, Abrechnung computed from the journal):
  *
- * - budget sheet: label in column A, budget ("Budget"/"provisorisch") and
+ * - budget sheet: label in the column of the "Ausgaben" cell (A or D), budget ("Budget"/"provisorisch") and
  *   Abrechnung ("Abrechnung"/"definitiv") columns found by their header,
  *   a rate column (CHF per day, Lagerbeitrag …) right before the budget column.
  *   Input cells are the coloured ones: blue = budget, green = Abrechnung.
  * - journal: Nr. | Datum | Text | Kategorie | Einnahme | Ausgabe
- * - categories: column A of the Referenzen sheet (the journal's dropdown list)
+ *   (or Datum | Beleg Nr. | Bemerkung | Leiter | Kategorie | Eingang | Ausgang)
+ * - categories: column A of the Referenzen sheet, else the journal's category dropdown list
  *
  * All formulas are evaluated here (see formula.ts) because saved files often
  * carry no cached results.
@@ -57,7 +60,7 @@ export type Budget = {
   categories: string[];
 };
 
-const PLAN_FILL = "FFDAEEF3";
+const PLAN_FILLS = ["FFDAEEF3", "FFCEDBE6"];
 const ACTUAL_FILL = "FFEAF1DD";
 const GROUP_FILL = "FF7F7F7F";
 
@@ -125,25 +128,30 @@ export async function parseBudget(xlsx: Buffer): Promise<Budget> {
     if (/^abrechnung$/i.test(text(c.value))) actualCol = ref.replace(/\d+/, "");
   }
   const rateCol = String.fromCharCode(planCol.charCodeAt(0) - 1);
+  // PBS template: grey group rows, labels in A. Without them (Google-Sheets template) the labels
+  // sit in the column of "Ausgaben", and plain "Ausgaben" / "Einnahmen" / "Bilanz" are the groups.
+  const hasGroupFill = [...B.values()].some((c) => c.fill === GROUP_FILL);
+  const labelCol = hasGroupFill ? "A" : [...B].find(([, c]) => /^ausgaben$/i.test(text(c.value)))?.[0].replace(/\d+/, "") ?? "A";
+  const valueCol = String.fromCharCode(labelCol.charCodeAt(0) + 1);
 
   const maxRow = Math.max(0, ...[...B.keys()].map((r) => Number(r.replace(/\D+/, ""))));
   const rows: BudgetRow[] = [];
   const meta: Budget["meta"] = [];
   let inBody = false;
   for (let r = 1; r <= maxRow; r++) {
-    const a = B.get(`A${r}`);
+    const a = B.get(`${labelCol}${r}`);
     const label = text(a?.value);
     if (!label) continue;
     const cellAt = (col: string): BudgetCell | undefined => {
       const c = B.get(`${col}${r}`);
       if (!c) return undefined;
-      const input = c.fill === PLAN_FILL ? "plan" : c.fill === ACTUAL_FILL ? "actual" : undefined;
+      const input = PLAN_FILLS.includes(c.fill ?? "") ? "plan" : c.fill === ACTUAL_FILL ? "actual" : undefined;
       const value = valueOf(budgetName, `${col}${r}`, c);
       if (!input && (value == null || value === "")) return undefined;
       if (typeof value === "string" && !input) return undefined; // headers like "provisorisch", repeated labels
       return { ref: `${col}${r}`, value: typeof value === "boolean" ? Number(value) : value, input, formula: Boolean(c.formula), money: isMoney(c.numFmt) };
     };
-    const isGroup = a?.fill === GROUP_FILL;
+    const isGroup = hasGroupFill ? a?.fill === GROUP_FILL : /^(ausgaben|einnahmen|bilanz)$/i.test(label);
     if (isGroup && /^ausgaben/i.test(label)) inBody = true;
     if (isGroup && inBody) { rows.push({ row: r, label, kind: "group" }); continue; }
     if (isGroup) continue; // "Lagerkonto", "J+S-Leihmaterial": headings of the info block
@@ -151,12 +159,20 @@ export async function parseBudget(xlsx: Buffer): Promise<Budget> {
     // above "Ausgaben": camp info ("Lagername | Abteilungs-SoLa 2027") and the
     // key figures (people, days, J+S material) that the formulas below use
     if (!inBody) {
-      if (plan || actual || rate) {
+      // "Lager: | name … Lagertage: | 3" rows are info even if a cell in a value column is filled
+      const info = !hasGroupFill && label.endsWith(":");
+      if ((plan || actual || rate) && !info) {
         if (!rows.length) rows.push({ row: 0, label: "Eckdaten", kind: "group" });
         rows.push({ row: r, label, kind: "line", plan, actual, rate });
       } else {
-        const v = text(B.get(`B${r}`)?.value);
-        if (v && v !== label) meta.push({ label, value: v });
+        const v = text(valueOf(budgetName, `${valueCol}${r}`, B.get(`${valueCol}${r}`) ?? { value: null }));
+        if (v && v !== label) meta.push({ label: label.replace(/:$/, ""), value: v });
+        for (const [ref, c] of info ? B : []) {
+          const [, col, n] = ref.match(/^([A-Z]+)(\d+)$/)!;
+          if (Number(n) !== r || col <= labelCol || !/:$/.test(text(c.value))) continue;
+          const w = text(B.get(`${String.fromCharCode(col.charCodeAt(0) + 1)}${r}`)?.value);
+          if (w) meta.push({ label: text(c.value).replace(/:$/, ""), value: w });
+        }
       }
       continue;
     }
@@ -181,15 +197,32 @@ export async function parseBudget(xlsx: Buffer): Promise<Budget> {
   const [incomePlan, incomeActual] = pa(find(/^total einnahmen/i));
   const [balancePlan, balanceActual] = pa(find(/überschuss|defizit/i));
 
+  const journal = journalName ? parseJournal(journalName, raw, sheets) : { sheet: "", cols: { date: "B", text: "C", category: "D", income: "E", expense: "F" }, bookings: [], freeRows: [] };
   return {
     sheet: budgetName,
     meta,
     rows,
     sections,
     summary: { expensesPlan, expensesActual, incomePlan, incomeActual, balancePlan, balanceActual },
-    journal: journalName ? parseJournal(journalName, raw, sheets) : { sheet: "", cols: { date: "B", text: "C", category: "D", income: "E", expense: "F" }, bookings: [], freeRows: [] },
-    categories: refName ? [...raw.get(refName)!].filter(([ref, c]) => /^A\d+$/.test(ref) && ref !== "A1" && text(c.value)).sort(byRow).map(([, c]) => text(c.value)) : [],
+    journal,
+    categories: refName
+      ? [...raw.get(refName)!].filter(([ref, c]) => /^A\d+$/.test(ref) && ref !== "A1" && text(c.value)).sort(byRow).map(([, c]) => text(c.value))
+      : dropdown(wb, ev, journal),
   };
+}
+
+/** The values of the list validation on the journal's category column (e.g. Berechnung!$A$2:$A$37). */
+function dropdown(wb: ExcelJS.Workbook, ev: Evaluator, journal: Budget["journal"]): string[] {
+  const row = journal.freeRows[0] ?? journal.bookings[0]?.row;
+  const dv = row ? wb.getWorksheet(journal.sheet)?.getCell(`${journal.cols.category}${row}`).dataValidation : undefined;
+  // shortcut: only a one-column range on another sheet, extend if a template uses a literal list or a name
+  const m = dv?.type === "list" ? String(dv.formulae?.[0] ?? "").match(/^'?((?:[^']|'')+?)'?!\$?([A-Z]+)\$?(\d+):\$?\2\$?(\d+)$/) : null;
+  if (!m) return [];
+  const out: string[] = [];
+  for (let r = Number(m[3]); r <= Number(m[4]); r++) {
+    try { out.push(text(ev.cell(m[1].replace(/''/g, "'"), `${m[2]}${r}`))); } catch (e) { if (!(e instanceof FormulaError)) throw e; }
+  }
+  return [...new Set(out.filter(Boolean))];
 }
 
 const byRow = ([a]: [string, unknown], [b]: [string, unknown]) => Number(a.slice(1)) - Number(b.slice(1));
@@ -201,8 +234,8 @@ function parseJournal(name: string, raw: Map<string, Map<string, Raw>>, sheets: 
   const colOf = (re: RegExp, fallback: string) =>
     [...J].find(([ref, c]) => Number(ref.replace(/\D+/, "")) === headerRow && re.test(text(c.value)))?.[0].replace(/\d+/, "") ?? fallback;
   const cols = {
-    nr: colOf(/^nr/i, "A"), date: colOf(/^datum$/i, "B"), text: colOf(/^text$/i, "C"),
-    category: colOf(/kategorie/i, "D"), income: colOf(/einnahme/i, "E"), expense: colOf(/ausgabe/i, "F"),
+    nr: colOf(/^nr|\bnr\.?$/i, "A"), date: colOf(/^datum$/i, "B"), text: colOf(/^(text|bemerkung)$/i, "C"),
+    category: colOf(/kategorie/i, "D"), income: colOf(/einnahme|eingang/i, "E"), expense: colOf(/ausgabe|ausgang/i, "F"),
   };
   // the budget only counts journal rows inside its SUMIF ranges (…$D$4:$D$265)
   let lastRow = Infinity;
@@ -216,12 +249,14 @@ function parseJournal(name: string, raw: Map<string, Map<string, Raw>>, sheets: 
   const maxRow = Math.min(lastRow, Math.max(headerRow, ...[...J.keys()].map((r) => Number(r.replace(/\D+/, "")))));
   const bookings: Booking[] = [];
   const freeRows: number[] = [];
+  const emptyRows: number[] = [];
   for (let r = headerRow + 1; r <= maxRow; r++) {
     const v = (col: string) => J.get(`${col}${r}`)?.value ?? null;
     const nr = text(v(cols.nr));
     const date = v(cols.date), t = text(v(cols.text)), cat = text(v(cols.category)), inc = toNum(v(cols.income)), exp = toNum(v(cols.expense));
     if (date == null && !t && !cat && inc == null && exp == null) {
       if (nr) freeRows.push(r);
+      emptyRows.push(r);
       continue;
     }
     bookings.push({
@@ -230,5 +265,6 @@ function parseJournal(name: string, raw: Map<string, Map<string, Raw>>, sheets: 
     });
   }
   const { nr: _nr, ...rest } = cols;
-  return { sheet: name, cols: rest, bookings, freeRows };
+  // templates with pre-numbered rows (Nr. 1…265) only offer those; others any empty row
+  return { sheet: name, cols: rest, bookings, freeRows: freeRows.length ? freeRows : emptyRows };
 }

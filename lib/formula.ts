@@ -3,7 +3,7 @@
  *
  * Files saved by Drive or by the app carry no (or stale) cached results, so the
  * app computes totals itself. Supported: numbers, strings, cell refs and ranges
- * (also on other sheets, with $), + - * / ^ &, comparisons, unary minus, % and
+ * (also on other sheets, with $, and whole columns like A:A), + - * / ^ &, comparisons, unary minus, % and
  * SUM, SUMIF, IF, MIN, MAX, ROUND, ROUNDUP, ROUNDDOWN, MROUND, ABS, AVERAGE, COUNT.
  * Anything else throws, and the caller falls back to the cached result.
  */
@@ -16,7 +16,8 @@ export class FormulaError extends Error {}
 
 type Tok = { t: "num" | "str" | "ref" | "fn" | "op" | "(" | ")" | ","; v: string };
 
-const REF = /^(?:(?:'((?:[^']|'')+)'|([A-Za-z_][\w.]*))!)?\$?([A-Z]{1,3})\$?(\d+)(?::\$?([A-Z]{1,3})\$?(\d+))?/;
+// A1, A1:B2 or a whole-column range A:B (group 7), each optionally on another sheet
+const REF = /^(?:(?:'((?:[^']|'')+)'|([A-Za-z_][\w.]*))!)?\$?([A-Z]{1,3})(?:\$?(\d+)(?::\$?([A-Z]{1,3})\$?(\d+))?|:\$?([A-Z]{1,3})\b)/;
 
 function tokenize(src: string): Tok[] {
   const out: Tok[] = [];
@@ -98,6 +99,12 @@ export class Evaluator {
   private sheets: Sheets;
   constructor(sheets: Sheets) { this.sheets = sheets; }
 
+  private lastRows = new Map<string, number>();
+  private lastRow(sheet: string) {
+    if (!this.lastRows.has(sheet)) this.lastRows.set(sheet, Math.max(0, ...[...this.sheets.get(sheet)!.keys()].map((r) => Number(r.replace(/\D+/, "")))));
+    return this.lastRows.get(sheet)!;
+  }
+
   /** Value of a cell, evaluating its formula (and those it depends on) if it has one. */
   cell(sheet: string, ref: string): Scalar {
     const key = `${sheet}!${ref}`;
@@ -127,10 +134,11 @@ export class Evaluator {
       const m = ref.match(REF)!;
       const sh = (m[1]?.replace(/''/g, "'") ?? m[2]) || sheet;
       if (!this.sheets.has(sh)) throw new FormulaError(`Blatt fehlt: ${sh}`);
-      if (!m[5]) return this.cell(sh, `${m[3]}${m[4]}`);
+      if (!m[5] && !m[7]) return this.cell(sh, `${m[3]}${m[4]}`);
       const out: Scalar[] = [];
-      const [c1, c2] = [colNum(m[3]), colNum(m[5])].sort((a, b) => a - b);
-      const [r1, r2] = [Number(m[4]), Number(m[6])].sort((a, b) => a - b);
+      const [c1, c2] = [colNum(m[3]), colNum(m[5] ?? m[7])].sort((a, b) => a - b);
+      // whole columns (A:A) run to the sheet's last filled row
+      const [r1, r2] = m[7] ? [1, this.lastRow(sh)] : [Number(m[4]), Number(m[6])].sort((a, b) => a - b);
       for (let r = r1; r <= r2; r++) for (let c = c1; c <= c2; c++) out.push(this.cell(sh, `${colName(c)}${r}`));
       return out;
     };
