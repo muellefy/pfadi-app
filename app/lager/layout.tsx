@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { auth, signOut } from "@/auth";
-import { getConfig } from "@/lib/config";
+import { getConfig } from "@/lib/data/config";
 import { Tent } from "@/components/icons";
 
 export const dynamic = "force-dynamic";

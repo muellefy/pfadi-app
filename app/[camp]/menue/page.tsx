@@ -1,9 +1,10 @@
 import { notFound } from "next/navigation";
-import { getCamp } from "@/lib/config";
-import { loadMenu, loadPeople } from "@/lib/data";
-import { XLSX } from "@/lib/drive";
-import { dietCounts, dietHints } from "@/lib/tables";
-import { ErrorNotice, Source } from "@/components/Bits";
+import { getCamp } from "@/lib/data/config";
+import { loadMenu, loadPeople } from "@/lib/data/loaders";
+import { XLSX } from "@/lib/data/drive";
+import { dietCounts, dietHints } from "@/lib/diet";
+import { ErrorNotice } from "@/components/ErrorNotice";
+import { Source } from "@/components/Source";
 import { MenuView } from "@/components/MenuView";
 import { External } from "@/components/icons";
 

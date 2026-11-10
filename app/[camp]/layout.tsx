@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { auth, signOut } from "@/auth";
-import { getCamp, getConfig } from "@/lib/config";
+import { getCamp, getConfig } from "@/lib/data/config";
 import { Nav } from "@/components/Nav";
 import { Tent } from "@/components/icons";
 

@@ -1,9 +1,10 @@
 import { notFound } from "next/navigation";
-import { getCamp } from "@/lib/config";
-import { loadProgram } from "@/lib/data";
-import { ErrorNotice } from "@/components/Bits";
+import { getCamp } from "@/lib/data/config";
+import { loadProgram } from "@/lib/data/loaders";
+import { ErrorNotice } from "@/components/ErrorNotice";
 import { ProgramView } from "@/components/ProgramView";
-import { Avatar, External } from "@/components/icons";
+import { Avatar } from "@/components/Avatar";
+import { External } from "@/components/icons";
 
 export const metadata = { title: "Programm" };
 

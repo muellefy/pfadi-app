@@ -2,11 +2,13 @@ import "server-only";
 import { cache } from "react";
 import type { CampConfig } from "./config";
 import { download, getItem, listChildren, parseRessort, resolveTableFile, XLSX, type DriveItem } from "./drive";
-import { cached } from "./cache";
-import { parsePeople, parseTermine, toGrid, type Grid, type PersonTable, type TermineSheet } from "./tables";
+import { cached } from "../cache";
+import { toGrid, type Grid } from "../grid";
+import { parsePeople, type PersonTable } from "../people";
+import { parseTermine, type TermineSheet } from "../termine";
 import { ecampConfigured, getProgram, type EcampProgram } from "./ecamp";
-import { parseBudget, type Budget } from "./budget";
-import { MENU_FILE, parseMenu, type MenuPlan } from "./menu";
+import { parseBudget, type Budget } from "../budget";
+import { MENU_FILE, parseMenu, type MenuPlan } from "../menu";
 
 /** Every loader returns either data or a readable error, so one broken file never takes a whole page down. */
 export type Result<T> = { ok: true; data: T; source?: DriveItem } | { ok: false; error: string };

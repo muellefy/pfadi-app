@@ -1,9 +1,10 @@
 "use server";
 import { revalidatePath } from "next/cache";
-import { getCamp } from "@/lib/config";
-import { download, getItemFresh, uploadNewRevision } from "@/lib/drive";
+import { getCamp } from "@/lib/data/config";
+import { download, getItemFresh, uploadNewRevision } from "@/lib/data/drive";
 import { serialize } from "@/lib/lock";
-import { parseTermine, setErledigt, toGrid } from "@/lib/tables";
+import { toGrid } from "@/lib/grid";
+import { parseTermine, setErledigt } from "@/lib/termine";
 
 const CHANGED = "Die Datei hat sich geändert – bitte Seite neu laden.";
 

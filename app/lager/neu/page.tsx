@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { getConfig } from "@/lib/config";
+import { getConfig } from "@/lib/data/config";
 import { NewCampForm } from "@/components/NewCampForm";
 
 export const metadata = { title: "Neues Lager" };

@@ -2,7 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { buildMenuPlan, parseMenu } from "./menu.ts";
 import { patchCells } from "./xlsxpatch.ts";
-import { toGrid } from "./tables.ts";
+import { toGrid } from "./grid.ts";
 
 test("buildMenuPlan → parseMenu: one row per day with the four meals", async () => {
   const xlsx = await buildMenuPlan("Menüplan Sola 27", "2027-07-19", "2027-07-31");

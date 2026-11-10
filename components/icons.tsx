@@ -23,10 +23,3 @@ export const Upload = (p: P) => (<svg {...base(p)}><path d="M12 15V4M7 9l5-5 5 5
 export const Eye = (p: P) => (<svg {...base(p)}><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z" /><circle cx="12" cy="12" r="3" /></svg>);
 export const Close = (p: P) => (<svg {...base(p)}><path d="M6 6l12 12M18 6 6 18" /></svg>);
 export const Alert =(p: P) => (<svg {...base(p)}><path d="M12 3 2 20h20z" /><path d="M12 10v4M12 17h.01" /></svg>);
-
-const PALETTE = ["#2f5d3a", "#b8913f", "#b4482a", "#3f6f8f", "#7a4f8c", "#4f7d6b", "#a3632c", "#5b6b2f"];
-export function Avatar({ name }: { name: string }) {
-  const sum = [...name].reduce((s, ch) => s + ch.charCodeAt(0), 0);
-  const initials = name.split(/[\s,/]+/).filter(Boolean).slice(0, 2).map((w) => w[0]?.toUpperCase()).join("");
-  return <span className="avatar" style={{ background: PALETTE[sum % PALETTE.length] }}>{initials}</span>;
-}

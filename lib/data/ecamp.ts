@@ -1,5 +1,5 @@
 import "server-only";
-import { cached } from "./cache";
+import { cached } from "../cache";
 
 /**
  * Read-only client for the eCamp v3 HAL+JSON API (https://app.ecamp3.ch/api).

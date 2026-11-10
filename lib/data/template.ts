@@ -1,6 +1,6 @@
 import "server-only";
 import { copyFile, createFolder, getItemFresh, listChildrenFresh, type DriveItem } from "./drive";
-import type { CopiedEntry } from "./camps";
+import type { CopiedEntry } from "../camps";
 
 const SHORTCUT = "application/vnd.google-apps.shortcut";
 const PARALLEL = 4;

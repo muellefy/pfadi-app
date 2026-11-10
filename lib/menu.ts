@@ -1,6 +1,7 @@
 import ExcelJS from "exceljs";
 import { colLetters } from "./xlsxpatch.ts";
-import { parseSwissDate, type Grid } from "./tables.ts";
+import { parseSwissDate } from "./dates.ts";
+import type { Grid } from "./grid.ts";
 
 /**
  * The Menüplan: one row per camp day, one column per meal, in an xlsx in the

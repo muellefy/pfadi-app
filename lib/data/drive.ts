@@ -3,8 +3,8 @@ import { auth as gauth, drive as gdrive, type drive_v3 } from "@googleapis/drive
 import { Readable } from "node:stream";
 import { cache } from "react";
 import { auth } from "@/auth";
-import { cached, forget } from "./cache";
-import { googleExport, previewKind } from "./files";
+import { cached, forget } from "../cache";
+import { googleExport, previewKind } from "../files";
 
 /** For small metadata/table requests: a stalled call must not hold the Termine write lock forever. Not for streamed files. */
 const SMALL = { timeout: 30_000 };

@@ -30,17 +30,17 @@ Not used in this repo: `perf`, `test`, `style` — skip them unless a real case 
 | Scope | Files |
 |---|---|
 | `auth` | `auth.ts`, `proxy.ts`, `app/login`, `app/api/auth` |
-| `ecamp` | `lib/ecamp.ts` |
-| `drive` | `lib/drive.ts` |
-| `config` | `lib/config.ts`, `config/camps.example.json`, env vars |
+| `ecamp` | `lib/data/ecamp.ts` |
+| `drive` | `lib/data/drive.ts` |
+| `config` | `lib/data/config.ts`, `config/camps.example.json`, env vars |
 | `program`, `people`, `termine`, `nav` | the matching view in `components/` and `app/[camp]` |
-| `ui` | shared UI: `components/Bits.tsx`, `icons.tsx`, `globals.css`, layout |
+| `ui` | shared UI: `components/` (e.g. `ErrorNotice.tsx`, `icons.tsx`), `globals.css`, layout |
 | `docker` | `Dockerfile`, `.dockerignore`, `docker-compose.yml` |
 | `renovate` | `renovate.json` |
 | `claude` | `.claude/`, `CLAUDE.md` |
 | `deps` | dependency updates (`package.json`, lockfile, base images, GitHub Actions) |
 
-- The scope is the **area of the app**, not the library. A googleapis bump made for Drive is still `chore(deps): …`; a code change in `lib/drive.ts` is `fix(drive): …`.
+- The scope is the **area of the app**, not the library. A googleapis bump made for Drive is still `chore(deps): …`; a code change in `lib/data/drive.ts` is `fix(drive): …`.
 - **Multiple unrelated things in one commit** → drop the scope, or split the commit. Don't cram several names into one scope.
 
 ## Quick decision flow

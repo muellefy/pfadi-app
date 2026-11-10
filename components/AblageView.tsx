@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import type { DriveItem } from "@/lib/drive";
+import type { DriveItem } from "@/lib/data/drive";
 import { downloadable, fileUrl, previewKind } from "@/lib/files";
 import { Close, Download, External, Eye, FileIcon, Folder, Sheet, Upload } from "./icons";
 

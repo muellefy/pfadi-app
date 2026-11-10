@@ -1,9 +1,9 @@
 "use server";
 import { revalidatePath } from "next/cache";
-import { getCamp } from "@/lib/config";
+import { getCamp } from "@/lib/data/config";
 import { parseBudget, type Budget } from "@/lib/budget";
-import { BUDGET_FILE } from "@/lib/data";
-import { download, getItemFresh, resolveTableFile, uploadNewRevision, XLSX } from "@/lib/drive";
+import { BUDGET_FILE } from "@/lib/data/loaders";
+import { download, getItemFresh, resolveTableFile, uploadNewRevision, XLSX } from "@/lib/data/drive";
 import { serialize } from "@/lib/lock";
 import { patchCells, type CellWrite } from "@/lib/xlsxpatch";
 

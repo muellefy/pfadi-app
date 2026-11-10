@@ -1,6 +1,6 @@
 "use client";
 import { useMemo, useState } from "react";
-import type { EcampProgram } from "@/lib/ecamp";
+import type { EcampProgram } from "@/lib/data/ecamp";
 
 const TZ = "Europe/Zurich";
 const dayKey = new Intl.DateTimeFormat("en-CA", { timeZone: TZ, year: "numeric", month: "2-digit", day: "2-digit" });
