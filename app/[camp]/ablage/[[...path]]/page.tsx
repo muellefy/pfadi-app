@@ -1,10 +1,11 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getCamp } from "@/lib/config";
-import { getItem, listChildren, parseRessort, type DriveItem } from "@/lib/drive";
+import { getCamp } from "@/lib/data/config";
+import { getItem, listChildren, parseRessort, type DriveItem } from "@/lib/data/drive";
 import { AblageView } from "@/components/AblageView";
-import { ErrorNotice } from "@/components/Bits";
-import { Avatar, External } from "@/components/icons";
+import { ErrorNotice } from "@/components/ErrorNotice";
+import { Avatar } from "@/components/Avatar";
+import { External } from "@/components/icons";
 
 export const metadata = { title: "Ablage" };
 

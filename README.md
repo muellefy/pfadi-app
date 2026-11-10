@@ -86,13 +86,22 @@ Entwicklung ohne Docker: `npm install && npm run dev`.
 ```
 auth.ts                 Google-Login (Domain-Check, Token-Refresh)
 proxy.ts                schützt alle Seiten
-lib/config.ts           liest config/camps.json
-lib/drive.ts            Drive-Zugriff als angemeldete Person
-lib/tables.ts           xlsx/csv → Termine & Personen
-lib/ecamp.ts            eCamp v3 HAL-API (nur lesen)
-lib/budget.ts           Budget-xlsx → Budget, Abrechnung, Finanzjournal
-lib/formula.ts          kleiner Excel-Formelrechner (SUM, SUMIF, MROUND …)
-lib/menu.ts             Menüplan anlegen und lesen
-lib/xlsxpatch.ts        einzelne Zellen in eine xlsx schreiben, ohne den Rest anzufassen
-app/[camp]/…            Seiten: Übersicht, Termine, Personen, Programm, Ablage
+app/                    Seiten (Next.js braucht diesen Ordner): Übersicht, Termine, Personen, Programm, Ablage
+components/             geteilte Bausteine (eine Komponente pro Datei)
+lib/data/               Laden und Speichern
+  config.ts             liest config/camps.json, speichert neue Lager
+  drive.ts              Drive-Zugriff als angemeldete Person
+  ecamp.ts              eCamp v3 HAL-API (nur lesen)
+  loaders.ts            lädt und parst die Dateien eines Lagers
+  template.ts           kopiert die Vorlage für ein neues Lager
+lib/                    reine Hilfsfunktionen (kein Netz, keine Dateien)
+  grid.ts               xlsx/csv → Tabelle aus Strings
+  termine.ts            Lagerdaten.xlsx → Termine
+  people.ts             TN-/Leiter-Listen → Personen
+  diet.ts               Ernährungshinweise für die Küche
+  dates.ts              Schweizer Datumsformat, «in 3 Tagen»
+  budget.ts             Budget-xlsx → Budget, Abrechnung, Finanzjournal
+  formula.ts            kleiner Excel-Formelrechner (SUM, SUMIF, MROUND …)
+  menu.ts               Menüplan anlegen und lesen
+  xlsxpatch.ts          einzelne Zellen in eine xlsx schreiben, ohne den Rest anzufassen
 ```

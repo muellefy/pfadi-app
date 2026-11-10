@@ -2,7 +2,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import type { MenuCell, MenuPlan } from "@/lib/menu";
-import type { DietPerson } from "@/lib/tables";
+import type { DietPerson } from "@/lib/diet";
 import { createMenuPlan, setMeal, type Result } from "@/app/[camp]/menue/actions";
 
 const DAY = new Intl.DateTimeFormat("de-CH", { weekday: "long", timeZone: "UTC" });

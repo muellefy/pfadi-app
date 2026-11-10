@@ -1,7 +1,8 @@
 import { notFound } from "next/navigation";
-import { getCamp } from "@/lib/config";
-import { loadBudget } from "@/lib/data";
-import { ErrorNotice, Source } from "@/components/Bits";
+import { getCamp } from "@/lib/data/config";
+import { loadBudget } from "@/lib/data/loaders";
+import { ErrorNotice } from "@/components/ErrorNotice";
+import { Source } from "@/components/Source";
 import { BudgetView } from "@/components/BudgetView";
 import { External } from "@/components/icons";
 

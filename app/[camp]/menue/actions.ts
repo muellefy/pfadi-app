@@ -1,12 +1,13 @@
 "use server";
 import { Readable } from "node:stream";
 import { revalidatePath } from "next/cache";
-import { getCamp } from "@/lib/config";
-import { loadMenu, loadProgram, loadTermine } from "@/lib/data";
-import { download, getItemFresh, uploadFile, uploadNewRevision, XLSX } from "@/lib/drive";
+import { getCamp } from "@/lib/data/config";
+import { loadMenu, loadProgram, loadTermine } from "@/lib/data/loaders";
+import { download, getItemFresh, uploadFile, uploadNewRevision, XLSX } from "@/lib/data/drive";
 import { serialize } from "@/lib/lock";
 import { buildMenuPlan, parseMenu } from "@/lib/menu";
-import { campDates, toGrid } from "@/lib/tables";
+import { campDates } from "@/lib/campDates";
+import { toGrid } from "@/lib/grid";
 import { patchCells } from "@/lib/xlsxpatch";
 
 export type Result = { ok: true } | { ok: false; error: string };

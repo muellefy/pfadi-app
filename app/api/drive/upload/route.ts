@@ -1,6 +1,6 @@
 import { Readable } from "node:stream";
 import type { ReadableStream as NodeReadableStream } from "node:stream/web";
-import { fileErrorResponse, uploadFile } from "@/lib/drive";
+import { fileErrorResponse, uploadFile } from "@/lib/data/drive";
 
 /** Only accept uploads started from this app (blocks cross-site form posts). */
 function sameOrigin(req: Request) {

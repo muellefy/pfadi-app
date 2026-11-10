@@ -1,5 +1,5 @@
 import { Readable } from "node:stream";
-import { fileErrorResponse, openFile } from "@/lib/drive";
+import { fileErrorResponse, openFile } from "@/lib/data/drive";
 
 /** RFC 6266 header that keeps umlauts in file names intact. */
 function disposition(type: "inline" | "attachment", name: string) {

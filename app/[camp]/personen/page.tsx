@@ -1,9 +1,10 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getCamp } from "@/lib/config";
-import { loadPeople, loadProgram, loadTermine } from "@/lib/data";
-import { campDates } from "@/lib/tables";
-import { ErrorNotice, Source } from "@/components/Bits";
+import { getCamp } from "@/lib/data/config";
+import { loadPeople, loadProgram, loadTermine } from "@/lib/data/loaders";
+import { campDates } from "@/lib/campDates";
+import { ErrorNotice } from "@/components/ErrorNotice";
+import { Source } from "@/components/Source";
 import { PeopleView } from "@/components/PeopleView";
 
 export const metadata = { title: "Teilnehmende & Leitende" };

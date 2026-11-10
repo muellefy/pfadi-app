@@ -1,11 +1,13 @@
 import Link from "next/link";
 import { Suspense } from "react";
 import { notFound } from "next/navigation";
-import { getCamp, type CampConfig } from "@/lib/config";
-import { loadPeople, loadProgram, loadRessorts, loadTermine } from "@/lib/data";
-import { campDates } from "@/lib/tables";
-import { ErrorNotice, StatusPill, daysUntil, relative, weekday } from "@/components/Bits";
-import { Avatar } from "@/components/icons";
+import { getCamp, type CampConfig } from "@/lib/data/config";
+import { loadPeople, loadProgram, loadRessorts, loadTermine } from "@/lib/data/loaders";
+import { campDates } from "@/lib/campDates";
+import { ErrorNotice } from "@/components/ErrorNotice";
+import { StatusPill } from "@/components/StatusPill";
+import { daysUntil, relative, weekday } from "@/lib/dates";
+import { Avatar } from "@/components/Avatar";
 
 const TODAY = new Intl.DateTimeFormat("de-CH", { weekday: "short", day: "numeric", month: "short", timeZone: "Europe/Zurich" });
 const fmt = (iso?: string) =>

@@ -1,9 +1,10 @@
 "use client";
 import { useMemo, useOptimistic, useState, useTransition } from "react";
-import type { Termin } from "@/lib/tables";
+import type { Termin } from "@/lib/termine";
 import { toggleTermin } from "@/app/[camp]/termine/actions";
 import { Check } from "./icons";
-import { STATUS_LABEL, StatusPill, relative, weekday } from "./Bits";
+import { STATUS_LABEL, StatusPill } from "./StatusPill";
+import { relative, weekday } from "@/lib/dates";
 
 type Props = { slug: string; termine: Termin[]; writeBack: boolean };
 const FILTERS = ["alle", "offen", "ueberfaellig", "bald", "erledigt"] as const;

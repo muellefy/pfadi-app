@@ -1,10 +1,10 @@
 import Link from "next/link";
 import { cookies } from "next/headers";
-import { getConfig } from "@/lib/config";
+import { getConfig } from "@/lib/data/config";
 import { CURRENT_COOKIE, pickCurrent } from "@/lib/camps";
-import { loadProgram } from "@/lib/data";
-import { campDates } from "@/lib/tables";
-import { daysUntil } from "@/components/Bits";
+import { loadProgram } from "@/lib/data/loaders";
+import { campDates } from "@/lib/campDates";
+import { daysUntil } from "@/lib/dates";
 import { ChooseCampButton } from "@/components/ChooseCampButton";
 
 export const metadata = { title: "Alle Lager" };

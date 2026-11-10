@@ -2,10 +2,10 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
-import { addCamp, getCamp, getConfig, RESERVED_SLUGS } from "@/lib/config";
+import { addCamp, getCamp, getConfig, RESERVED_SLUGS } from "@/lib/data/config";
 import { CURRENT_COOKIE, detectFiles, driveId, ecampId, slugify } from "@/lib/camps";
 import { serialize } from "@/lib/lock";
-import { copyTemplate } from "@/lib/template";
+import { copyTemplate } from "@/lib/data/template";
 
 const YEAR = 365 * 86_400;
 

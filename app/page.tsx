@@ -1,6 +1,6 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { getConfig } from "@/lib/config";
+import { getConfig } from "@/lib/data/config";
 import { CURRENT_COOKIE, pickCurrent } from "@/lib/camps";
 
 export const dynamic = "force-dynamic";

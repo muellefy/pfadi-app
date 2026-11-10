@@ -1,6 +1,6 @@
 "use client";
 import { Fragment, useMemo, useState } from "react";
-import type { PersonTable } from "@/lib/tables";
+import type { PersonTable } from "@/lib/people";
 import { toCsv } from "@/lib/csv";
 import { Download } from "./icons";
 
