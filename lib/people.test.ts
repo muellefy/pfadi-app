@@ -13,3 +13,11 @@ test("parsePeople: detects name, stufe and Hinweis columns", () => {
     ["Vorname", "Nachname", "Pfadiname", "Stufe", "Telefon", ["Allergien"]],
   );
 });
+
+test("parsePeople: a \"Wer bisch duu?\" form column is the name", () => {
+  const { roles } = parsePeople([
+    ["Zeitstempel", "Wer bisch duu?", "Natel", "Allergien"],
+    ["18.11.2026 13:09", "Kiwi", "079 123 45 67", "keine"],
+  ]);
+  assert.equal(roles.vorname, "Wer bisch duu?");
+});
