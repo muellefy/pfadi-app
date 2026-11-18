@@ -12,7 +12,8 @@ export type PersonTable = {
 
 const ROLE_PATTERNS: [keyof Omit<PersonTable["roles"], "hinweise">, RegExp][] = [
   ["pfadiname", /pfadi.?name|übername|uebername|vulgo|^v\/o$|nickname|spitzname/i],
-  ["vorname", /^vorname|first.?name/i],
+  // "Wer bisch duu?" is the full-name question of the Chlawe Google Form
+  ["vorname", /^vorname|first.?name|^wer bisch/i],
   ["nachname", /^(nach)?name$|^nachname|last.?name|familienname/i],
   ["stufe", /stufe|einheit|gruppe|abteilung|^rolle$|^role$/i],
   ["geburtsdatum", /geburt|birth|jahrgang/i],
