@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getCamp } from "@/lib/data/config";
-import { loadPeople, loadProgram, loadTermine } from "@/lib/data/loaders";
+import { loadBudget, loadPeople, loadProgram, loadTermine } from "@/lib/data/loaders";
+import { beitragOf, type Which } from "@/lib/payments";
 import { campDates } from "@/lib/campDates";
 import { ErrorNotice } from "@/components/ErrorNotice";
 import { Source } from "@/components/Source";
@@ -19,10 +20,21 @@ export default async function PersonenPage({
   const [{ camp: slug }, { liste }] = await Promise.all([params, searchParams]);
   const camp = await getCamp(slug);
   if (!camp) notFound();
-  const which = liste === "leiter" ? "leiter" : "tn";
+  const which: Which = liste === "leiter" ? "leiter" : "tn";
   // eCamp and Lagerdaten.xlsx can hold the camp start, needed for "Alter am Lagerbeginn"
-  const [res, program, termine] = await Promise.all([loadPeople(camp, which), loadProgram(camp), loadTermine(camp)]);
+  const [res, program, termine, budget] = await Promise.all([
+    loadPeople(camp, which), loadProgram(camp), loadTermine(camp), camp.drive.budgetFileId ? loadBudget(camp) : null,
+  ]);
   const { start } = campDates(camp, program.ok ? program.data : null, termine.ok ? termine.data : undefined);
+  // Beiträge only show up when the budget charges one per person (no Leiterbeitrag → no column)
+  const beitrag = budget?.ok ? beitragOf(budget.data, which) : null;
+  const payments = beitrag && budget?.ok ? {
+    which,
+    rate: beitrag.rate,
+    category: beitrag.category,
+    bookings: budget.data.journal.bookings.filter((b) => b.category === beitrag.category),
+    editable: camp.writeBack && Boolean(budget.source?.canEdit),
+  } : undefined;
 
   return (
     <>
@@ -39,7 +51,7 @@ export default async function PersonenPage({
       </header>
       {res.ok ? (
         <>
-          <PeopleView table={res.data} campStart={start} label={which === "tn" ? "Teilnehmende" : "Leitende"} />
+          <PeopleView slug={slug} table={res.data} campStart={start} payments={payments} label={which === "tn" ? "Teilnehmende" : "Leitende"} />
           <div style={{ marginTop: 12 }}><Source item={res.source} /></div>
         </>
       ) : (
