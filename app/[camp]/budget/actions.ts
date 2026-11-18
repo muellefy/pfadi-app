@@ -6,6 +6,7 @@ import { BUDGET_FILE } from "@/lib/data/loaders";
 import { download, getItemFresh, resolveTableFile, uploadNewRevision, XLSX } from "@/lib/data/drive";
 import { serialize } from "@/lib/lock";
 import { patchCells, type CellWrite } from "@/lib/xlsxpatch";
+import { beitragOf, paymentOf, paymentText, type Which } from "@/lib/payments";
 
 export type Result = { ok: true } | { ok: false; error: string };
 const CHANGED = "Die Datei wurde inzwischen geändert – bitte Seite neu laden und nochmals versuchen.";
@@ -30,11 +31,12 @@ async function edit(slug: string, plan: (b: Budget) => { sheet: string; writes: 
       const { buffer } = await download(item);
       const decided = plan(await parseBudget(buffer));
       if (typeof decided === "string") return { ok: false, error: decided };
+      if (!decided.writes.length) return { ok: true as const };
       const updated = await patchCells(buffer, decided.sheet, decided.writes);
       // shortcut: Drive v3 has no conditional upload, so a tiny window between this check and the upload remains
       if ((await getItemFresh(file.id)).modifiedTime !== item.modifiedTime) return { ok: false, error: CHANGED };
       await uploadNewRevision(file.id, updated);
-      revalidatePath(`/${slug}/budget`);
+      revalidatePath(`/${slug}`, "layout"); // the budget and the Personen page (Beiträge) read this file
       return { ok: true as const };
     });
   } catch (e) {
@@ -98,7 +100,29 @@ export async function deleteBooking(slug: string, row: number, expectText: strin
   return edit(slug, (b) => {
     const current = b.journal.bookings.find((x) => x.row === row);
     if (!current || current.text !== expectText) return CHANGED;
-    const { cols } = b.journal;
-    return { sheet: b.journal.sheet, writes: [cols.date, cols.text, cols.category, cols.income, cols.expense].map((c) => ({ ref: `${c}${row}`, value: null })) };
+    return clearBooking(b, row);
+  });
+}
+
+function clearBooking(b: Budget, row: number) {
+  const { cols } = b.journal;
+  return { sheet: b.journal.sheet, writes: [cols.date, cols.text, cols.category, cols.income, cols.expense].map((c) => ({ ref: `${c}${row}`, value: null })) };
+}
+
+/** Ticks a person's Lager-/Leiterbeitrag as paid (adds an income booking) or unpaid (empties that booking). */
+export async function setPaid(slug: string, which: Which, name: string, paid: boolean): Promise<Result> {
+  const who = String(name ?? "").trim();
+  if (which !== "tn" && which !== "leiter") return { ok: false, error: "Unbekannte Liste." };
+  if (!who || who.length > 150) return { ok: false, error: "Ungültiger Name." };
+  return edit(slug, (b) => {
+    const beitrag = beitragOf(b, which);
+    if (!beitrag) return "Im Budget ist dafür kein Beitrag pro Person eingetragen.";
+    const booking = paymentOf(b.journal.bookings, beitrag.category, who);
+    if (!paid) return booking ? clearBooking(b, booking.row) : { sheet: b.journal.sheet, writes: [] };
+    if (booking) return { sheet: b.journal.sheet, writes: [] };
+    if (!b.journal.freeRows.length) return "Das Finanzjournal ist voll – bitte in Excel weitere Zeilen ergänzen.";
+    const today = new Date().toLocaleDateString("sv-SE", { timeZone: "Europe/Zurich" }); // YYYY-MM-DD
+    const writes = bookingWrites(b, b.journal.freeRows[0], { date: today, text: paymentText(which, who), category: beitrag.category, amount: beitrag.rate });
+    return typeof writes === "string" ? writes : { sheet: b.journal.sheet, writes };
   });
 }
