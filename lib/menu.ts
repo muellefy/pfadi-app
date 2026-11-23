@@ -2,6 +2,7 @@ import ExcelJS from "exceljs";
 import { colLetters } from "./xlsxpatch.ts";
 import { parseSwissDate } from "./dates.ts";
 import type { Grid } from "./grid.ts";
+import { RECIPES_SHEET } from "./shopping.ts";
 
 /**
  * The Menüplan: one row per camp day, one column per meal, in an xlsx in the
@@ -55,6 +56,10 @@ export async function buildMenuPlan(title: string, start: string, end: string): 
     row.getCell(1).alignment = { vertical: "top" };
     row.getCell(2).alignment = { vertical: "top" };
   }
+  const recipes = wb.addWorksheet(RECIPES_SHEET, { views: [{ state: "frozen", ySplit: 1 }] });
+  recipes.columns = [{ width: 28 }, { width: 24 }, { width: 18 }, { width: 10 }];
+  recipes.getRow(1).values = ["Gericht", "Zutat", "Menge pro Person", "Einheit"];
+  recipes.getRow(1).font = { bold: true };
   return Buffer.from(await wb.xlsx.writeBuffer());
 }
 

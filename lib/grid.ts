@@ -19,7 +19,7 @@ function cellText(v: ExcelJS.CellValue): string {
   return String(v);
 }
 
-/** First worksheet (or the named one) as a plain grid of strings. */
+/** First worksheet, or the named one (empty if missing), as a plain grid of strings. */
 export async function toGrid(file: Downloaded, sheetName?: string): Promise<Grid> {
   if (file.format === "csv") {
     const text = file.buffer.toString("utf8").replace(/^﻿/, "");
@@ -29,7 +29,7 @@ export async function toGrid(file: Downloaded, sheetName?: string): Promise<Grid
   const wb = new ExcelJS.Workbook();
   // exceljs' types predate Node 22's generic Buffer
   await wb.xlsx.load(file.buffer as unknown as ArrayBuffer);
-  const ws = (sheetName && wb.getWorksheet(sheetName)) || wb.worksheets[0];
+  const ws = sheetName ? wb.worksheets.find((w) => w.name.toLowerCase() === sheetName.toLowerCase()) : wb.worksheets[0];
   if (!ws) return [];
   const grid: Grid = [];
   ws.eachRow({ includeEmpty: true }, (row, rowNr) => {

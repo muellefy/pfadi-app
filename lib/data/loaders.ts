@@ -9,6 +9,7 @@ import { parseTermine, type TermineSheet } from "../termine";
 import { ecampConfigured, getProgram, type EcampProgram } from "./ecamp";
 import { parseBudget, type Budget } from "../budget";
 import { MENU_FILE, parseMenu, type MenuPlan } from "../menu";
+import { parseRecipes, RECIPES_SHEET, type Ingredient } from "../shopping";
 
 /** Every loader returns either data or a readable error, so one broken file never takes a whole page down. */
 export type Result<T> = { ok: true; data: T; source?: DriveItem } | { ok: false; error: string };
@@ -27,9 +28,9 @@ async function attempt<T>(fn: () => Promise<{ data: T; source?: DriveItem }>): P
  * the caller already fetched `item` with their own token, so Drive checked access,
  * and the same id + modifiedTime is the same content for everyone.
  */
-function gridOf(item: DriveItem): Promise<Grid> {
-  if (!item.modifiedTime) return download(item).then((f) => toGrid(f));
-  return cached(`grid:${item.id}:${item.modifiedTime}`, 6 * 3_600_000, async () => toGrid(await download(item)));
+function gridOf(item: DriveItem, sheet?: string): Promise<Grid> {
+  if (!item.modifiedTime) return download(item).then((f) => toGrid(f, sheet));
+  return cached(`grid:${item.id}:${item.modifiedTime}:${sheet ?? ""}`, 6 * 3_600_000, async () => toGrid(await download(item), sheet));
 }
 
 export const loadTermine = cache((camp: CampConfig) =>
@@ -83,7 +84,7 @@ export const loadBudget = cache((camp: CampConfig) =>
   }),
 );
 
-export type MenuData = { plan: MenuPlan | null; folder?: DriveItem };
+export type MenuData = { plan: MenuPlan | null; recipes: Ingredient[]; folder?: DriveItem };
 
 /**
  * The Menüplan. `menuFileId` is the xlsx itself or the Küche folder; in a folder the
@@ -97,9 +98,11 @@ export const loadMenu = cache((camp: CampConfig) =>
     if (item.isFolder) {
       const tables = (await listChildren(item.id)).filter((f) => !f.isFolder && MENU_FILE.test(f.name) && (f.mimeType === XLSX || f.mimeType === "application/vnd.google-apps.spreadsheet"));
       tables.sort((a, b) => (b.modifiedTime ?? "").localeCompare(a.modifiedTime ?? ""));
-      if (!tables[0]) return { data: { plan: null, folder: item } };
+      if (!tables[0]) return { data: { plan: null, recipes: [], folder: item } };
       source = await getItem(tables[0].id); // fresh after the app wrote it (see resolveTableFile)
     }
-    return { data: { plan: parseMenu(await gridOf(source)), folder: item.isFolder ? item : undefined }, source };
+    // shortcut: downloads the file twice on a cold cache, one grid per sheet; fine for a small xlsx
+    const [menu, recipes] = await Promise.all([gridOf(source), gridOf(source, RECIPES_SHEET)]);
+    return { data: { plan: parseMenu(menu), recipes: parseRecipes(recipes), folder: item.isFolder ? item : undefined }, source };
   }),
 );

@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { buildMenuPlan, parseMenu } from "./menu.ts";
 import { patchCells } from "./xlsxpatch.ts";
 import { toGrid } from "./grid.ts";
+import { parseRecipes, RECIPES_SHEET } from "./shopping.ts";
 
 test("buildMenuPlan → parseMenu: one row per day with the four meals", async () => {
   const xlsx = await buildMenuPlan("Menüplan Sola 27", "2027-07-19", "2027-07-31");
@@ -12,6 +13,8 @@ test("buildMenuPlan → parseMenu: one row per day with the four meals", async (
   assert.equal(plan.days[0].date, "2027-07-19");
   assert.equal(plan.days[0].meals[1].ref, "D5");
   assert.equal(plan.days[0].notes?.ref, "G5");
+  assert.deepEqual(await toGrid({ buffer: xlsx, format: "xlsx" }, RECIPES_SHEET), [["Gericht", "Zutat", "Menge pro Person", "Einheit"]]);
+  assert.deepEqual(parseRecipes(await toGrid({ buffer: xlsx, format: "xlsx" }, "Fehlt")), []);
 });
 
 test("a patched meal keeps the cell style and reads back", async () => {

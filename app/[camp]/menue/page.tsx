@@ -6,6 +6,7 @@ import { dietCounts, dietHints } from "@/lib/diet";
 import { ErrorNotice } from "@/components/ErrorNotice";
 import { Source } from "@/components/Source";
 import { MenuView } from "@/components/MenuView";
+import { ShoppingList } from "@/components/ShoppingList";
 import { External } from "@/components/icons";
 
 export const metadata = { title: "Menüplan" };
@@ -45,6 +46,7 @@ export default async function MenuePage({ params }: { params: Promise<{ camp: st
             people={people}
             counts={dietCounts(people)}
           />
+          {res.data.plan && <ShoppingList plan={res.data.plan} recipes={res.data.recipes} headcount={headcount} />}
           {res.data.plan && <div style={{ marginTop: 12 }}><Source item={res.source} /></div>}
         </>
       )}
