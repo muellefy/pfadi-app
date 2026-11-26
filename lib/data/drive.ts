@@ -90,6 +90,13 @@ export async function getItemFresh(id: string): Promise<DriveItem> {
   return toItem(data);
 }
 
+/** The folder a file lies in (its first parent), as the logged-in person sees it. */
+export async function parentOf(id: string): Promise<string | undefined> {
+  const drive = await client();
+  const { data } = await drive.files.get({ fileId: id, fields: "parents", supportsAllDrives: true }, SMALL);
+  return data.parents?.[0] ?? undefined;
+}
+
 export function listChildren(folderId: string): Promise<DriveItem[]> {
   return perPerson("list", folderId, () => listChildrenFresh(folderId));
 }
