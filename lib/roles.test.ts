@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { canManageRoles, canReview, rolesOf } from "./roles.ts";
+import { canCook, canManageRoles, canReview, isKitchenCategory, rolesOf } from "./roles.ts";
 
 const none = { al: false, coach: false, hauptleitung: false, kueche: false };
 
@@ -39,4 +39,22 @@ test("canManageRoles: the camp's Hauptleitung and the AL, nobody else", () => {
   assert.equal(canManageRoles({ ...none, al: true }), true);
   assert.equal(canManageRoles({ ...none, coach: true }), false);
   assert.equal(canManageRoles({ ...none, kueche: true }), false);
+});
+
+test("canCook: without a Küche team everyone may edit the kitchen as before", () => {
+  assert.equal(canCook(none, { kueche: [] }), true);
+});
+
+test("canCook: with a Küche team only Küche, Hauptleitung and AL", () => {
+  const camp = { kueche: ["k@pfadis.ch"] };
+  assert.equal(canCook(none, camp), false);
+  assert.equal(canCook({ ...none, coach: true }, camp), false);
+  assert.equal(canCook({ ...none, kueche: true }, camp), true);
+  assert.equal(canCook({ ...none, hauptleitung: true }, camp), true);
+  assert.equal(canCook({ ...none, al: true }, camp), true);
+});
+
+test("isKitchenCategory: food categories only", () => {
+  for (const c of ["Ausgaben - Essen", "Ausgaben - Küche", "Verpflegung", "Ausgaben - Lebensmittel"]) assert.equal(isKitchenCategory(c), true, c);
+  for (const c of ["Ausgaben - Höcks", "Ausgaben - Miete", "Einnahmen - Lagerbeiträge", "Interessen"]) assert.equal(isKitchenCategory(c), false, c);
 });

@@ -3,6 +3,7 @@ import { useMemo, useState, type FormEvent } from "react";
 import type { Booking, Budget } from "@/lib/budget";
 import { money } from "@/lib/money";
 import { receiptName, uploadReceipt } from "@/lib/receipt";
+import { isKitchenCategory } from "@/lib/roles";
 import { deleteBooking, saveBooking, type Result } from "@/app/[camp]/budget/actions";
 
 const DATE = new Intl.DateTimeFormat("de-CH", { day: "2-digit", month: "2-digit", year: "numeric", timeZone: "UTC" });
@@ -14,9 +15,12 @@ type JournalProps = {
   run: (fn: () => Promise<Result>, after?: () => void) => void;
   /** where receipts go; no field without it */
   receiptFolderId?: string;
+  /** kitchen categories belong to the Küche team (see canCook) */
+  kitchenLocked?: boolean;
 };
 
-export function Journal({ slug, budget, editable, pending, run, receiptFolderId }: JournalProps) {
+export function Journal({ slug, budget, editable, pending, run, receiptFolderId, kitchenLocked }: JournalProps) {
+  const locked = (category: string) => Boolean(kitchenLocked) && isKitchenCategory(category);
   const [editing, setEditing] = useState<Booking | null>(null);
   const [filter, setFilter] = useState("");
   const [q, setQ] = useState("");
@@ -71,7 +75,7 @@ export function Journal({ slug, budget, editable, pending, run, receiptFolderId 
             <select name="category" required defaultValue={editing?.category ?? ""}>
               <option value="" disabled>Kategorie wählen</option>
               {groups.map(([g, cats]) => (
-                <optgroup key={g} label={g}>{cats.map((c) => <option key={c} value={c}>{shortCat(c)}</option>)}</optgroup>
+                <optgroup key={g} label={g}>{cats.map((c) => <option key={c} value={c} disabled={locked(c)}>{shortCat(c)}{locked(c) ? " (nur Küche)" : ""}</option>)}</optgroup>
               ))}
             </select>
             <small className="muted">Einnahmen-Kategorien werden als Einnahme gebucht, alle anderen als Ausgabe.</small>
@@ -108,10 +112,10 @@ export function Journal({ slug, budget, editable, pending, run, receiptFolderId 
                     <td className="num in">{b.income != null ? money(b.income) : ""}</td>
                     <td className="num">{b.expense != null ? money(b.expense) : ""}</td>
                     {editable && (
-                      <td className="actions">
+                      <td className="actions">{!locked(b.category) && (<>
                         <button className="btn ghost" disabled={pending} onClick={() => { setEditing(b); window.scrollTo({ top: 0, behavior: "smooth" }); }}>Ändern</button>
                         <button className="btn ghost" disabled={pending} onClick={() => { if (confirm(`Buchung «${b.text}» löschen?`)) run(() => deleteBooking(slug, b.row, b.text)); }}>Löschen</button>
-                      </td>
+                      </>)}</td>
                     )}
                   </tr>
                 ))}

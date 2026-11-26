@@ -22,3 +22,14 @@ export const canReview = (r: Roles) => r.al || r.coach || r.hauptleitung;
 
 /** Who may assign the roles of a camp: its Hauptleitung (the camp's admin) and the AL. */
 export const canManageRoles = (r: Roles) => r.al || r.hauptleitung;
+
+/**
+ * Who may change the Menüplan and kitchen bookings. A camp without a Küche team works as
+ * before (Drive rights decide); once someone is Küche, only Küche, Hauptleitung and AL.
+ */
+export const canCook = (r: Roles, camp: { kueche: string[] }) => camp.kueche.length === 0 || r.kueche || r.hauptleitung || r.al;
+
+/** Budget categories that belong to the kitchen ("Ausgaben - Essen", "Verpflegung" …). */
+export const isKitchenCategory = (category: string) => /(^|[\s\-–])(essen|küche|kueche|verpflegung|lebensmittel)/i.test(category);
+
+export const KITCHEN_ONLY = "Das dürfen nur das Küchenteam, die Hauptleitung und die Abteilungsleitung ändern (Rollen im Lager).";

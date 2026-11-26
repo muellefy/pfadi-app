@@ -1,4 +1,5 @@
 "use client";
+import { KITCHEN_ONLY } from "@/lib/roles";
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import type { MenuCell, MenuPlan } from "@/lib/menu";
@@ -10,10 +11,12 @@ const DATE = new Intl.DateTimeFormat("de-CH", { day: "numeric", month: "long", t
 
 type Props = {
   slug: string; plan: MenuPlan | null; editable: boolean; canCreate: boolean;
+  /** the camp has a Küche team and this person isn't in it */
+  kitchenOnly?: boolean;
   headcount: number; people: DietPerson[]; counts: { label: string; count: number }[];
 };
 
-export function MenuView({ slug, plan, editable, canCreate, headcount, people, counts }: Props) {
+export function MenuView({ slug, plan, editable, canCreate, kitchenOnly, headcount, people, counts }: Props) {
   const [error, setError] = useState("");
   const [pending, start] = useTransition();
   const router = useRouter();
@@ -47,11 +50,11 @@ export function MenuView({ slug, plan, editable, canCreate, headcount, people, c
           <button className="btn primary" disabled={!canCreate || pending} onClick={() => run(() => createMenuPlan(slug))}>
             {pending ? "Lege an …" : "Menüplan anlegen"}
           </button>
-          {!canCreate && <span className="small muted">Du darfst im Küche-Ordner nichts anlegen, oder Zurückschreiben ist ausgeschaltet.</span>}
+          {!canCreate && <span className="small muted">{kitchenOnly ? KITCHEN_ONLY : "Du darfst im Küche-Ordner nichts anlegen, oder Zurückschreiben ist ausgeschaltet."}</span>}
         </div>
       ) : (
         <>
-          {!editable && <div className="notice" style={{ marginBottom: 12 }}>Nur lesen – Bearbeiten braucht eine .xlsx-Datei, Schreibrechte im Drive und writeBack.</div>}
+          {!editable && <div className="notice" style={{ marginBottom: 12 }}>{kitchenOnly ? KITCHEN_ONLY : "Nur lesen – Bearbeiten braucht eine .xlsx-Datei, Schreibrechte im Drive und writeBack."}</div>}
           <div className="days menu-days">
             {plan.days.map((d) => (
               <section key={d.row} className="day card">
