@@ -3,6 +3,7 @@ import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { z } from "zod";
 import { mergeRoles, type CampRoleLists } from "../campRoles.ts";
+import { emailList, parseConfigFile } from "../configFile.ts";
 import { readRoleStore } from "./campRolesStore.ts";
 import { dataPath, writeJson } from "./dataDir.ts";
 
@@ -32,8 +33,8 @@ const Camp = z.object({
   ecampCampId: z.string().optional(), // id from the eCamp URL: app.ecamp3.ch/camps/<id>/...
   writeBack: z.boolean().default(false),
   // per-camp roles fixed here; more are managed in the app ($DATA_DIR/roles.json)
-  hauptleitung: z.array(z.string()).default([]),
-  kueche: z.array(z.string()).default([]),
+  hauptleitung: emailList,
+  kueche: emailList,
 });
 /** hauptleitung/kueche are merged with the app's roles; fixedRoles are the ones from the camp files. */
 export type CampConfig = z.infer<typeof Camp> & { fixedRoles?: CampRoleLists };
@@ -45,7 +46,7 @@ const Config = z.object({
   templateFolderId: z.string().optional(),
   camps: z.array(Camp).default([]),
   /** emails of the Abteilungsleitung and J+S Coaches (see lib/roles.ts) */
-  roles: z.object({ al: z.array(z.string()).default([]), coach: z.array(z.string()).default([]) }).default({ al: [], coach: [] }),
+  roles: z.object({ al: emailList, coach: emailList }).default({ al: [], coach: [] }),
 });
 export type AppConfig = z.infer<typeof Config>;
 
@@ -58,7 +59,7 @@ let cache: { at: number; value: AppConfig } | null = null;
 
 async function readStored(): Promise<z.infer<typeof Stored>> {
   const raw = await readFile(dataFile(), "utf8").catch((e) => (e.code === "ENOENT" ? null : Promise.reject(e)));
-  return raw ? Stored.parse(JSON.parse(raw)) : { camps: [] };
+  return raw ? parseConfigFile(Stored, raw, dataFile()) : { camps: [] };
 }
 
 export async function getConfig(): Promise<AppConfig> {
@@ -67,7 +68,7 @@ export async function getConfig(): Promise<AppConfig> {
   const raw = await readFile(file, "utf8").catch(() => {
     throw new Error(`Konfiguration fehlt: ${file}. Kopiere config/camps.example.json nach config/camps.json.`);
   });
-  const base = Config.parse(JSON.parse(raw));
+  const base = parseConfigFile(Config, raw, file);
   const stored = await readStored();
   const known = new Set(base.camps.map((c) => c.slug));
   const roles = await readRoleStore();
