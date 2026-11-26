@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { Suspense } from "react";
+import { auth } from "@/auth";
 import { cookies } from "next/headers";
 import { getConfig } from "@/lib/data/config";
 import { CURRENT_COOKIE, pickCurrent } from "@/lib/camps";
@@ -6,6 +8,8 @@ import { loadProgram } from "@/lib/data/loaders";
 import { campDates } from "@/lib/campDates";
 import { daysUntil } from "@/lib/dates";
 import { ChooseCampButton } from "@/components/ChooseCampButton";
+import { CampStatus } from "@/components/CampStatus";
+import { rolesOf } from "@/lib/roles";
 
 export const metadata = { title: "Alle Lager" };
 
@@ -13,7 +17,9 @@ const fmt = (iso?: string) =>
   iso ? new Date(iso).toLocaleDateString("de-CH", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" }) : "";
 
 export default async function LagerPage() {
-  const [config, jar] = await Promise.all([getConfig(), cookies()]);
+  const [config, jar, session] = await Promise.all([getConfig(), cookies(), auth()]);
+  const roles = rolesOf(session?.user?.email, config.roles);
+  const showStatus = roles.al || roles.coach;
   const chosen = jar.get(CURRENT_COOKIE)?.value;
   // eCamp dates win over the config ones; the program is cached, so this is cheap
   const camps = await Promise.all(
@@ -51,6 +57,12 @@ export default async function LagerPage() {
                 {days != null && !over && (days > 0 ? ` · in ${days} Tagen` : " · läuft")}
                 {over && " · vorbei"}
               </p>
+              {showStatus && (
+                // each camp streams on its own: the page shows at once, a slow camp only delays its card
+                <Suspense fallback={<p className="loading small" role="status" style={{ padding: "8px 0 0" }}>Lade Stand …</p>}>
+                  <CampStatus camp={c} />
+                </Suspense>
+              )}
               <div className="camp-card-actions">
                 <Link href={`/${c.slug}`} className="btn">Öffnen</Link>
                 {!isCurrent && <ChooseCampButton slug={c.slug} />}
