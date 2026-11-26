@@ -9,8 +9,7 @@ const nextConfig: NextConfig = {
     return [{
       source: "/:path*",
       headers: [
-        // shortcut: no script-src (Next's inline scripts would need nonces), add one if XSS ever becomes a concern
-        { key: "Content-Security-Policy", value: "frame-ancestors 'self'; base-uri 'self'; form-action 'self' https://accounts.google.com; object-src 'none'" },
+        // the Content-Security-Policy needs a fresh nonce per request, so proxy.ts sets it
         { key: "X-Frame-Options", value: "SAMEORIGIN" },
         { key: "X-Content-Type-Options", value: "nosniff" },
         { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },

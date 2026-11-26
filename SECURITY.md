@@ -4,9 +4,9 @@ pfadi-app handles personal data of children and leaders (names, contact details,
 possibly allergies/health notes from Drive participant lists). Treat every
 change that touches login, Drive or eCamp data as security-relevant.
 
-Run `/security-review` in Claude Code before every commit. The GitHub Action
-(`.github/workflows/security-review.yml`) reviews every pull request against
-the same rules (`.github/security-scan-instructions.txt`).
+Run `/security-review` in Claude Code before opening a pull request. There is
+no automated security review in CI; Renovate keeps dependencies current and
+`npm audit` should report 0 vulnerabilities before a release.
 
 ## 1. Authentication (Google login)
 - [ ] Only `@pfadis.ch` accounts can sign in. The domain is checked **on the server**
@@ -49,12 +49,13 @@ the same rules (`.github/security-scan-instructions.txt`).
 - [ ] CSV/xlsx exports are protected against formula injection
       (cells starting with `=`, `+`, `-`, `@`).
 - [ ] State-changing requests are protected against CSRF.
-- [ ] Security headers set (CSP, `X-Frame-Options`/`frame-ancestors`,
-      `Referrer-Policy`).
+- [ ] Security headers set: CSP with a per-request script nonce (`proxy.ts`,
+      `lib/csp.ts`), `X-Frame-Options`/`frame-ancestors`, `Referrer-Policy`
+      (`next.config.ts`).
 
 ## 7. Docker Compose & deployment
 - [ ] Container runs as a non-root user.
 - [ ] Only the app port is exposed; internal services (DB, cache) are not
       published to the host/internet.
 - [ ] HTTPS in front of the app (reverse proxy).
-- [ ] Base images and npm dependencies are kept up to date (`npm audit`, Dependabot).
+- [ ] Base images and npm dependencies are kept up to date (`npm audit`, Renovate).
