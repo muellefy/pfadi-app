@@ -77,9 +77,17 @@ function totals(entries: EcampEntry[]) {
   return { jsMinutes, movementMin, parts: PARTS.map(([p]) => p).filter((p) => parts.has(p)), ok };
 }
 
-/** One check per camp day (Swiss date of the block start), in order. */
-export function checkDays(entries: EcampEntry[]): DayCheck[] {
+/**
+ * One check per camp day (Swiss date of the block start), in order. Every day of the
+ * eCamp periods is listed, so a day nobody planned shows up as failing instead of vanishing.
+ */
+export function checkDays(entries: EcampEntry[], periods: { start: string; end: string }[] = []): DayCheck[] {
   const byDay = new Map<string, EcampEntry[]>();
+  for (const p of periods) {
+    for (let d = new Date(`${p.start.slice(0, 10)}T00:00:00Z`); d.toISOString().slice(0, 10) <= p.end.slice(0, 10); d.setUTCDate(d.getUTCDate() + 1)) {
+      byDay.set(d.toISOString().slice(0, 10), []);
+    }
+  }
   for (const e of [...entries].sort((a, b) => a.start.localeCompare(b.start))) {
     const d = local(e.start).date;
     byDay.set(d, [...(byDay.get(d) ?? []), e]);

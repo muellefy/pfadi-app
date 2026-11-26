@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getCamp } from "@/lib/data/config";
+import { auth } from "@/auth";
+import { getCamp, getConfig } from "@/lib/data/config";
+import { canReview, rolesOf } from "@/lib/roles";
 import { loadCoach } from "@/lib/data/loaders";
 import { checkDays, gapsOf } from "@/lib/coach";
 import { fileUrl } from "@/lib/files";
@@ -17,12 +19,19 @@ export default async function CoachPage({ params, searchParams }: {
   searchParams: Promise<{ luecken?: string }>;
 }) {
   const [{ camp: slug }, { luecken }] = await Promise.all([params, searchParams]);
-  const camp = await getCamp(slug);
+  const [camp, config, session] = await Promise.all([getCamp(slug), getConfig(), auth()]);
   if (!camp) notFound();
+  if (!canReview(rolesOf(session?.user?.email, config.roles))) {
+    return (
+      <div className="notice">
+        Die Coach-Durchsicht ist nur für die Abteilungsleitung und J+S-Coaches (Rollen in <code>config/camps.json</code>).
+      </div>
+    );
+  }
   const res = await loadCoach(camp);
   const onlyGaps = luecken === "1";
 
-  const days = res.ok && res.data ? checkDays(res.data.program.entries) : [];
+  const days = res.ok && res.data ? checkDays(res.data.program.entries, res.data.program.periods) : [];
   const content = res.ok && res.data ? res.data.content : {};
   const withGaps = days.map((d) => ({ day: d, blocks: d.entries.map((e) => ({ e, gaps: gapsOf(e, e.root ? content[e.root] : undefined) })) }));
   const gapCount = withGaps.reduce((n, d) => n + d.blocks.filter((b) => b.gaps.length).length, 0);
