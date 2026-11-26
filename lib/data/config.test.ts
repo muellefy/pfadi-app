@@ -27,3 +27,23 @@ test("getConfig: roles from roles.json are added to the camp, camps.json ones st
   assert.deepEqual(sola?.kueche, ["k@pfadis.ch"]);
   assert.deepEqual(sola?.fixedRoles, { hauptleitung: ["fix@pfadis.ch"], kueche: [] });
 });
+
+test("getConfig: a single email without brackets counts as a list", async () => {
+  const dir = mkdtempSync(path.join(tmpdir(), "cfg-"));
+  writeFileSync(path.join(dir, "camps.json"), JSON.stringify({ roles: { al: "al@pfadis.ch" }, camps: [] }));
+  process.env.CAMPS_CONFIG = path.join(dir, "camps.json");
+  process.env.DATA_DIR = dir;
+  const { forgetConfig, getConfig } = await import("./config.ts");
+  forgetConfig();
+  assert.deepEqual((await getConfig()).roles.al, ["al@pfadis.ch"]);
+});
+
+test("getConfig: a broken camps.json says where", async () => {
+  const dir = mkdtempSync(path.join(tmpdir(), "cfg-"));
+  writeFileSync(path.join(dir, "camps.json"), '{\n  "roles": { "al": [] }\n  "camps": []\n}');
+  process.env.CAMPS_CONFIG = path.join(dir, "camps.json");
+  process.env.DATA_DIR = dir;
+  const { forgetConfig, getConfig } = await import("./config.ts");
+  forgetConfig();
+  await assert.rejects(getConfig(), /camps\.json: kein gültiges JSON bei Zeile 3/);
+});
