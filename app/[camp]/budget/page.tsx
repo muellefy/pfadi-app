@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { getCamp } from "@/lib/data/config";
 import { loadBudget } from "@/lib/data/loaders";
+import { getItem, parentOf } from "@/lib/data/drive";
 import { ErrorNotice } from "@/components/ErrorNotice";
 import { Source } from "@/components/Source";
 import { BudgetView } from "@/components/BudgetView";
@@ -14,6 +15,10 @@ export default async function BudgetPage({ params }: { params: Promise<{ camp: s
   if (!camp) notFound();
   const res = await loadBudget(camp);
   const editable = res.ok && camp.writeBack && Boolean(res.source?.canEdit);
+  // receipts go next to the budget file: the configured folder, or the folder the file lies in
+  const receiptFolderId = editable && res.source && camp.drive.budgetFileId
+    ? await getItem(camp.drive.budgetFileId).then((i) => (i.isFolder ? i.id : parentOf(res.source!.id))).catch(() => undefined)
+    : undefined;
 
   return (
     <>
@@ -39,7 +44,7 @@ export default async function BudgetPage({ params }: { params: Promise<{ camp: s
               {!camp.writeBack ? "Bearbeiten ist für dieses Lager ausgeschaltet (writeBack)." : "Nur lesen – du hast im Drive keine Schreibrechte auf diese Datei."}
             </div>
           )}
-          <BudgetView slug={slug} budget={res.data} editable={editable} />
+          <BudgetView slug={slug} budget={res.data} editable={editable} receiptFolderId={receiptFolderId} />
           <div style={{ marginTop: 12 }}><Source item={res.source} /></div>
         </>
       )}
