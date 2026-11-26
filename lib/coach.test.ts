@@ -78,3 +78,13 @@ test("checkDays: first and last day are checked together", () => {
 test("checkDays: no entries, no days", () => {
   assert.deepEqual(checkDays([]), []);
 });
+
+test("checkDays: a camp day without any block still shows up, and fails", () => {
+  const days = checkDays(
+    [entry(at(19, "09:00"), at(19, "11:00"), "LS", 60), entry(at(21, "14:00"), at(21, "16:00"), "LS", 60)],
+    [{ start: "2027-07-19", end: "2027-07-21" }],
+  );
+  assert.deepEqual(days.map((d) => d.date), ["2027-07-19", "2027-07-20", "2027-07-21"]);
+  assert.equal(days[1].jsMinutes, 0);
+  assert.equal(days[1].ok, false);
+});

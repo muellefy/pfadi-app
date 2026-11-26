@@ -21,7 +21,8 @@ export function BudgetView({ slug, budget, editable, receiptFolderId }: Props) {
   const run = (fn: () => Promise<Result>, after?: () => void) =>
     start(async () => {
       setError("");
-      const res = await fn();
+      // a thrown error (e.g. offline) must show as a message, not replace the page
+      const res = await fn().catch((e: unknown): Result => ({ ok: false, error: e instanceof Error ? e.message : "Speichern fehlgeschlagen." }));
       if (!res.ok) { setError(res.error); return; }
       after?.();
       router.refresh();
