@@ -3,8 +3,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Calendar, Check, Coins, Folder, Grid, Home, Pot, Users } from "./icons";
 
-/** `coach`: show the Coach page (AL and Coach only, see canReview) */
-export function Nav({ slug, coach = false }: { slug: string; coach?: boolean }) {
+/** `coach`: show the Coach page (see canReview); `kitchenFirst`: the Menüplan leads (Küche role) */
+export function Nav({ slug, coach = false, kitchenFirst = false }: { slug: string; coach?: boolean; kitchenFirst?: boolean }) {
   const path = usePathname();
   const items = [
     { href: `/${slug}`, label: "Übersicht", short: "Übersicht", icon: Home, exact: true },
@@ -16,6 +16,7 @@ export function Nav({ slug, coach = false }: { slug: string; coach?: boolean }) 
     { href: `/${slug}/budget`, label: "Budget & Abrechnung", short: "Budget", icon: Coins },
     { href: `/${slug}/ablage`, label: "Ablage", short: "Ablage", icon: Folder },
   ];
+  if (kitchenFirst) items.unshift(...items.splice(items.findIndex((i) => i.href.endsWith("/menue")), 1));
   return (
     <nav className="nav" aria-label="Bereiche">
       {items.map(({ href, label, short, icon: Icon, exact }) => {

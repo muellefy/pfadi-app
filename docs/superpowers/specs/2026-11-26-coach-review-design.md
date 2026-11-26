@@ -119,6 +119,7 @@ book in kitchen budget categories; the admin page manages roles only; one releas
 - The sidebar tag "Küche"; "/" opens the Menüplan for Küche people (not for the Hauptleitung);
   Menü moves first in their navigation.
 - Once a camp has at least one Küche person, only Küche, Hauptleitung and AL may change the
-  Menüplan and add/change/delete bookings in kitchen categories (name contains Essen, Küche,
-  Verpflegung or Lebensmittel). With no Küche person, everything stays as before.
+  Menüplan and add/change/delete bookings in kitchen categories: in "Section: Item" names the
+  section is Verpflegung/Küche/Essen/Lebensmittel (template: only "Verpflegung: …"); names without
+  a section match those whole words. With no Küche person, everything stays as before.
 - Checked on the server in the actions; the UI only hides what would fail.

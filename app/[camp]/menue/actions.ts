@@ -2,6 +2,8 @@
 import { Readable } from "node:stream";
 import { revalidatePath } from "next/cache";
 import { getCamp } from "@/lib/data/config";
+import { myRoles } from "@/lib/data/myRoles";
+import { canCook, KITCHEN_ONLY } from "@/lib/roles";
 import { loadMenu, loadProgram, loadTermine } from "@/lib/data/loaders";
 import { download, getItemFresh, uploadFile, uploadNewRevision, XLSX } from "@/lib/data/drive";
 import { serialize } from "@/lib/lock";
@@ -17,6 +19,7 @@ const CHANGED = "Der Menüplan wurde inzwischen geändert – bitte Seite neu la
 export async function createMenuPlan(slug: string): Promise<Result> {
   const camp = await getCamp(slug);
   if (!camp?.writeBack) return { ok: false, error: "Zurückschreiben ist für dieses Lager deaktiviert (writeBack)." };
+  if (!canCook(await myRoles(camp), camp)) return { ok: false, error: KITCHEN_ONLY };
   try {
     return await serialize(`menu-create:${slug}`, async () => {
       const menu = await loadMenu(camp);
@@ -45,6 +48,7 @@ export async function createMenuPlan(slug: string): Promise<Result> {
 export async function setMeal(slug: string, ref: string, before: string, text: string): Promise<Result> {
   const camp = await getCamp(slug);
   if (!camp?.writeBack) return { ok: false, error: "Zurückschreiben ist für dieses Lager deaktiviert (writeBack)." };
+  if (!canCook(await myRoles(camp), camp)) return { ok: false, error: KITCHEN_ONLY };
   const value = String(text ?? "").trim().slice(0, 500);
   try {
     const menu = await loadMenu(camp);

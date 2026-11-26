@@ -1,5 +1,7 @@
 import { notFound } from "next/navigation";
 import { getCamp } from "@/lib/data/config";
+import { myRoles } from "@/lib/data/myRoles";
+import { canCook } from "@/lib/roles";
 import { loadMenu, loadPeople } from "@/lib/data/loaders";
 import { XLSX } from "@/lib/data/drive";
 import { dietCounts, dietHints } from "@/lib/diet";
@@ -15,12 +17,13 @@ export default async function MenuePage({ params }: { params: Promise<{ camp: st
   const { camp: slug } = await params;
   const camp = await getCamp(slug);
   if (!camp) notFound();
-  const [res, tn, leiter] = await Promise.all([loadMenu(camp), loadPeople(camp, "tn"), loadPeople(camp, "leiter")]);
+  const [res, tn, leiter, roles] = await Promise.all([loadMenu(camp), loadPeople(camp, "tn"), loadPeople(camp, "leiter"), myRoles(camp)]);
+  const cook = canCook(roles, camp);
 
   // for the kitchen: how many people, and who needs what (only what the person may see in Drive)
   const people = [...(tn.ok ? dietHints(tn.data, "TN") : []), ...(leiter.ok ? dietHints(leiter.data, "Leitende") : [])];
   const headcount = (tn.ok ? tn.data.rows.length : 0) + (leiter.ok ? leiter.data.rows.length : 0);
-  const editable = res.ok && camp.writeBack && res.source?.mimeType === XLSX && Boolean(res.source?.canEdit);
+  const editable = cook && res.ok && camp.writeBack && res.source?.mimeType === XLSX && Boolean(res.source?.canEdit);
   const link = res.ok ? (res.source ?? res.data.folder)?.webViewLink : undefined;
 
   return (
@@ -41,7 +44,8 @@ export default async function MenuePage({ params }: { params: Promise<{ camp: st
             slug={slug}
             plan={res.data.plan}
             editable={editable}
-            canCreate={camp.writeBack && Boolean(res.data.folder?.canAddChildren)}
+            canCreate={cook && camp.writeBack && Boolean(res.data.folder?.canAddChildren)}
+            kitchenOnly={!cook}
             headcount={headcount}
             people={people}
             counts={dietCounts(people)}

@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { canManageRoles, canReview, rolesOf } from "./roles.ts";
+import { canCook, canManageRoles, canReview, isKitchenCategory, kitchenBlocked, rolesOf } from "./roles.ts";
 
 const none = { al: false, coach: false, hauptleitung: false, kueche: false };
 
@@ -39,4 +39,37 @@ test("canManageRoles: the camp's Hauptleitung and the AL, nobody else", () => {
   assert.equal(canManageRoles({ ...none, al: true }), true);
   assert.equal(canManageRoles({ ...none, coach: true }), false);
   assert.equal(canManageRoles({ ...none, kueche: true }), false);
+});
+
+test("canCook: without a Küche team everyone may edit the kitchen as before", () => {
+  assert.equal(canCook(none, { kueche: [] }), true);
+});
+
+test("canCook: with a Küche team only Küche, Hauptleitung and AL", () => {
+  const camp = { kueche: ["k@pfadis.ch"] };
+  assert.equal(canCook(none, camp), false);
+  assert.equal(canCook({ ...none, coach: true }, camp), false);
+  assert.equal(canCook({ ...none, kueche: true }, camp), true);
+  assert.equal(canCook({ ...none, hauptleitung: true }, camp), true);
+  assert.equal(canCook({ ...none, al: true }, camp), true);
+});
+
+// the categories of the Lagerbudget template (sheet "Berechnung"): "Section: Item"
+const TEMPLATE = ["Rekognoszierung: Reise, Verpflegung", "Rekognoszierung: weiteres", "Unterkunft: Miete Haus/Zeltplatz", "Unterkunft: Nebenkosten (Strom, Holz, Heizung usw.)", "Unterkunft: Kurtaxe", "Unterkunft: weiteres", "Unterkunft: Beschädigungen (z.B. Geschirr)\nca. 2% der Miete", "Verpflegung: Verpflegungskosten", "Verpflegung: weiteres", "Reise&Transport: Kollektivbillett", "Reise&Transport: J&S Material", "Reise&Transport: Materialtransport, Chauffeur", "Reise&Transport: weiteres", "Programm: Programm-Abend vor Lager", "Programm: Benützungsgebühren für Turnhallen usw.", "Programm: Ausflüge", "Programm: Preise für Wettbewerbe", "Programm: weiteres", "Material: Verbrauchsmaterial", "Material: Spiel- und Bastelmaterial", "Material: Apotheke", "Material: Reparaturen und Ersatz", "Material: weiteres", "Organisation: Porti, Telefonspesen", "Organisation: Fotokopien usw.", "Organisation: Spesen Leitungsteam/Küche", "Organisation: Geschenke, Trinkgelder", "Organisation: weiteres", "Lagerauswertung: Elternabend", "Lagerauswertung: Abschlussabend des Leitungsteams", "Lagerauswertung: weiteres", "Einnahmen: Total Lagerbeitrag", "Einnahmen: Total Präventionsbeitrag", "Einnahmen: Finanzaktionen", "Einnahmen: Spenden", "Einnahmen: weiteres"];
+
+test("isKitchenCategory: in the template only the Verpflegung section is the kitchen's", () => {
+  assert.deepEqual(TEMPLATE.filter(isKitchenCategory), ["Verpflegung: Verpflegungskosten", "Verpflegung: weiteres"]);
+});
+
+test("isKitchenCategory: names without a section match whole words", () => {
+  for (const c of ["Ausgaben - Essen", "Küche", "Ausgaben - Lebensmittel", "Ku\u0308che"]) assert.equal(isKitchenCategory(c), true, c);
+  for (const c of ["Ausgaben - Höcks", "Ausgaben - Miete", "Programm Essensausflug", "Interessen"]) assert.equal(isKitchenCategory(c), false, c);
+});
+
+test("kitchenBlocked: outsiders can neither write nor overwrite kitchen bookings", () => {
+  assert.equal(kitchenBlocked(false, "Verpflegung: weiteres"), true);
+  assert.equal(kitchenBlocked(false, "Material: weiteres", "Verpflegung: weiteres"), true); // kitchen → other
+  assert.equal(kitchenBlocked(false, "Verpflegung: weiteres", "Material: weiteres"), true); // other → kitchen
+  assert.equal(kitchenBlocked(false, "Material: weiteres", "Programm: weiteres"), false);
+  assert.equal(kitchenBlocked(true, "Verpflegung: weiteres", "Verpflegung: weiteres"), false);
 });

@@ -24,7 +24,7 @@ export default async function CoachPage({ params, searchParams }: {
   if (!canReview(rolesOf(session?.user?.email, config.roles, camp))) {
     return (
       <div className="notice">
-        Die Coach-Durchsicht ist nur für die Abteilungsleitung, J+S-Coaches und die Hauptleitung dieses Lagers (Rollen in <code>config/camps.json</code>).
+        Die Coach-Durchsicht ist nur für die Abteilungsleitung, J+S-Coaches und die Hauptleitung dieses Lagers. Die Hauptleitung vergibt Rollen unter «Rollen im Lager».
       </div>
     );
   }

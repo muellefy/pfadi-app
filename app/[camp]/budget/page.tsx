@@ -1,5 +1,7 @@
 import { notFound } from "next/navigation";
 import { getCamp } from "@/lib/data/config";
+import { myRoles } from "@/lib/data/myRoles";
+import { canCook } from "@/lib/roles";
 import { loadBudget } from "@/lib/data/loaders";
 import { getItem, parentOf } from "@/lib/data/drive";
 import { ErrorNotice } from "@/components/ErrorNotice";
@@ -13,7 +15,7 @@ export default async function BudgetPage({ params }: { params: Promise<{ camp: s
   const { camp: slug } = await params;
   const camp = await getCamp(slug);
   if (!camp) notFound();
-  const res = await loadBudget(camp);
+  const [res, roles] = await Promise.all([loadBudget(camp), myRoles(camp)]);
   const editable = res.ok && camp.writeBack && Boolean(res.source?.canEdit);
   // receipts go next to the budget file: the configured folder, or the folder the file lies in
   const receiptFolderId = editable && res.source && camp.drive.budgetFileId
@@ -44,7 +46,7 @@ export default async function BudgetPage({ params }: { params: Promise<{ camp: s
               {!camp.writeBack ? "Bearbeiten ist für dieses Lager ausgeschaltet (writeBack)." : "Nur lesen – du hast im Drive keine Schreibrechte auf diese Datei."}
             </div>
           )}
-          <BudgetView slug={slug} budget={res.data} editable={editable} receiptFolderId={receiptFolderId} />
+          <BudgetView slug={slug} budget={res.data} editable={editable} receiptFolderId={receiptFolderId} kitchenLocked={!canCook(roles, camp)} />
           <div style={{ marginTop: 12 }}><Source item={res.source} /></div>
         </>
       )}

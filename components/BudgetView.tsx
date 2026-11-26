@@ -9,9 +9,9 @@ import { setBudgetValue, type Result } from "@/app/[camp]/budget/actions";
 const NUM = new Intl.NumberFormat("de-CH", { maximumFractionDigits: 2 });
 const fmtCell = (c: BudgetCell) => (typeof c.value === "number" ? (c.money ? money(c.value) : NUM.format(c.value)) : c.value ?? "");
 
-type Props = { slug: string; budget: Budget; editable: boolean; receiptFolderId?: string };
+type Props = { slug: string; budget: Budget; editable: boolean; receiptFolderId?: string; kitchenLocked?: boolean };
 
-export function BudgetView({ slug, budget, editable, receiptFolderId }: Props) {
+export function BudgetView({ slug, budget, editable, receiptFolderId, kitchenLocked }: Props) {
   const [tab, setTab] = useState<"budget" | "journal">("budget");
   const [error, setError] = useState("");
   const [pending, start] = useTransition();
@@ -53,7 +53,7 @@ export function BudgetView({ slug, budget, editable, receiptFolderId }: Props) {
           <Sections budget={budget} />
         </div>
       ) : (
-        <Journal budget={budget} editable={editable} pending={pending} run={run} slug={slug} receiptFolderId={receiptFolderId} />
+        <Journal budget={budget} editable={editable} pending={pending} run={run} slug={slug} receiptFolderId={receiptFolderId} kitchenLocked={kitchenLocked} />
       )}
     </>
   );

@@ -1,6 +1,8 @@
 "use server";
 import { revalidatePath } from "next/cache";
 import { getCamp } from "@/lib/data/config";
+import { myRoles } from "@/lib/data/myRoles";
+import { canCook, KITCHEN_ONLY, kitchenBlocked } from "@/lib/roles";
 import { parseBudget, type Budget } from "@/lib/budget";
 import { BUDGET_FILE } from "@/lib/data/loaders";
 import { download, getItemFresh, resolveTableFile, uploadNewRevision, XLSX } from "@/lib/data/drive";
@@ -78,9 +80,19 @@ function bookingWrites(b: Budget, row: number, input: BookingInput): CellWrite[]
   ];
 }
 
+/** Whether this person may touch kitchen bookings in this camp (see canCook). */
+async function mayCook(slug: string) {
+  const camp = await getCamp(slug);
+  return camp ? canCook(await myRoles(camp), camp) : false;
+}
+
 /** Adds a booking in the first free journal row, or replaces booking `row` if it still holds `expectText`. */
 export async function saveBooking(slug: string, input: BookingInput, existing?: { row: number; text: string }): Promise<Result> {
+  const cook = await mayCook(slug);
   return edit(slug, (b) => {
+    // a kitchen booking may neither be written nor overwritten by someone outside the kitchen
+    const before = existing && b.journal.bookings.find((x) => x.row === existing.row);
+    if (kitchenBlocked(cook, String(input.category ?? ""), before?.category)) return KITCHEN_ONLY;
     let row: number;
     if (existing) {
       const current = b.journal.bookings.find((x) => x.row === existing.row);
@@ -97,9 +109,11 @@ export async function saveBooking(slug: string, input: BookingInput, existing?: 
 
 /** Empties a booking's cells (the number in "Nr." stays), if the row still holds `expectText`. */
 export async function deleteBooking(slug: string, row: number, expectText: string): Promise<Result> {
+  const cook = await mayCook(slug);
   return edit(slug, (b) => {
     const current = b.journal.bookings.find((x) => x.row === row);
     if (!current || current.text !== expectText) return CHANGED;
+    if (kitchenBlocked(cook, current.category)) return KITCHEN_ONLY;
     return clearBooking(b, row);
   });
 }

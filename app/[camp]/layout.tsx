@@ -25,7 +25,7 @@ export default async function CampLayout({ children, params }: { children: React
           ))}
           <Link href="/lager" className="all">Alle Lager / neues Lager</Link>
         </nav>
-        <Nav slug={slug} coach={canReview(roles)} />
+        <Nav slug={slug} coach={canReview(roles)} kitchenFirst={roles.kueche && !roles.hauptleitung} />
         <div className="me">
           <span>
             {session?.user?.name ?? session?.user?.email}
