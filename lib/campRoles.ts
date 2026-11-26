@@ -17,9 +17,22 @@ export function mergeRoles(base: Partial<CampRoleLists>, stored?: Partial<CampRo
   return Object.fromEntries(CAMP_ROLES.map((r) => [r, uniq([...(base[r] ?? []), ...(stored?.[r] ?? [])])])) as CampRoleLists;
 }
 
-/** A pasted list of addresses: one per line, or split by commas, semicolons or spaces; "Name <a@b.ch>" works too. */
+/**
+ * A pasted list of addresses: one per line, or split by commas, semicolons or spaces;
+ * "Name <a@b.ch>" and "mailto:" as mail programs copy them. Linear in the input (no backtracking).
+ */
 export function splitEmails(text: string): string[] {
-  return text.replace(/[^,;\n<>]*<([^>]+)>/g, " $1 ").replace(/[<>]/g, " ").split(/[\s,;]+/).map(norm).filter(Boolean);
+  const out: string[] = [];
+  for (const part of text.split(/[,;\n]+/)) {
+    const open = part.indexOf("<");
+    const close = open >= 0 ? part.indexOf(">", open) : -1;
+    const tokens = close > open ? [part.slice(open + 1, close)] : part.split(/\s+/);
+    for (const t of tokens) {
+      const e = norm(t.replace(/[<>]/g, "").replace(/^mailto:/i, ""));
+      if (e) out.push(e);
+    }
+  }
+  return out;
 }
 
 /** null when the address may get a role, else the reason. */

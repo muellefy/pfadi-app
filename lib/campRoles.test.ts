@@ -77,3 +77,14 @@ test("splitEmails: a pasted list, by lines, commas, semicolons or spaces", () =>
 test("splitEmails: names in angle brackets, as mail programs copy them", () => {
   assert.deepEqual(splitEmails("Anna Muster <anna@pfadis.ch>, ben@pfadis.ch"), ["anna@pfadis.ch", "ben@pfadis.ch"]);
 });
+
+test("splitEmails: a huge paste is split in linear time", () => {
+  const t0 = performance.now();
+  splitEmails("a".repeat(1_000_000));
+  splitEmails("Anna Muster ".repeat(80_000));
+  assert.ok(performance.now() - t0 < 500, `took ${Math.round(performance.now() - t0)} ms`);
+});
+
+test("splitEmails: a comma inside the name and mailto: links", () => {
+  assert.deepEqual(splitEmails("Muster, Anna <anna@pfadis.ch>; mailto:ben@pfadis.ch"), ["muster", "anna@pfadis.ch", "ben@pfadis.ch"]);
+});

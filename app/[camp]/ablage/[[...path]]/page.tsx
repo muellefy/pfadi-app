@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getCamp } from "@/lib/data/config";
+import { getMyCamp } from "@/lib/data/myRoles";
 import { getItem, listChildren, parseRessort, type DriveItem } from "@/lib/data/drive";
 import { AblageView } from "@/components/AblageView";
 import { ErrorNotice } from "@/components/ErrorNotice";
@@ -11,7 +11,7 @@ export const metadata = { title: "Ablage" };
 
 export default async function AblagePage({ params }: { params: Promise<{ camp: string; path?: string[] }> }) {
   const { camp: slug, path = [] } = await params;
-  const camp = await getCamp(slug);
+  const camp = await getMyCamp(slug);
   if (!camp) notFound();
 
   // path = chain of folder ids below the camp root; this keeps navigation inside the camp

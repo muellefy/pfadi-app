@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { getCamp } from "@/lib/data/config";
+import { getMyCamp } from "@/lib/data/myRoles";
 import { myRoles } from "@/lib/data/myRoles";
 import { canCook } from "@/lib/roles";
 import { loadBudget } from "@/lib/data/loaders";
@@ -13,7 +13,7 @@ export const metadata = { title: "Budget" };
 
 export default async function BudgetPage({ params }: { params: Promise<{ camp: string }> }) {
   const { camp: slug } = await params;
-  const camp = await getCamp(slug);
+  const camp = await getMyCamp(slug);
   if (!camp) notFound();
   const [res, roles] = await Promise.all([loadBudget(camp), myRoles(camp)]);
   const editable = res.ok && camp.writeBack && Boolean(res.source?.canEdit);

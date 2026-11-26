@@ -27,6 +27,17 @@ export const canReview = (r: Roles) => r.al || r.coach || r.hauptleitung;
 export const canSeeCamp = (r: Roles, camp: { leiter: string[] }) =>
   camp.leiter.length === 0 || r.al || r.coach || r.hauptleitung || r.kueche || r.leiter;
 
+/**
+ * The camp behind a URL slug, if this person may see it; undefined otherwise. Every camp page and
+ * action goes through this: a layout alone can't hide a page, Next renders pages next to it.
+ */
+export function visibleCamp<C extends { slug: string; hauptleitung: string[]; kueche: string[]; leiter: string[] }>(
+  camps: C[], lists: RoleLists, slug: string, email: string | null | undefined,
+): C | undefined {
+  const camp = camps.find((c) => c.slug === slug);
+  return camp && canSeeCamp(rolesOf(email, lists, camp), camp) ? camp : undefined;
+}
+
 /** Who may assign the roles of a camp: its Hauptleitung (the camp's admin) and the AL. */
 export const canManageRoles = (r: Roles) => r.al || r.hauptleitung;
 

@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { canCook, canManageRoles, canReview, canSeeCamp, isKitchenCategory, kitchenBlocked, rolesOf } from "./roles.ts";
+import { canCook, canManageRoles, canReview, canSeeCamp, isKitchenCategory, kitchenBlocked, rolesOf, visibleCamp } from "./roles.ts";
 
 const none = { al: false, coach: false, hauptleitung: false, kueche: false, leiter: false };
 
@@ -86,4 +86,15 @@ test("canSeeCamp: with Leiter only members, AL and Coach", () => {
   const camp = { leiter: ["l@pfadis.ch"] };
   assert.equal(canSeeCamp(none, camp), false);
   for (const r of ["leiter", "kueche", "hauptleitung", "al", "coach"] as const) assert.equal(canSeeCamp({ ...none, [r]: true }, camp), true, r);
+});
+
+test("visibleCamp: a member gets the camp, an outsider nothing, an unknown slug nothing", () => {
+  const camps = [{ slug: "sola", hauptleitung: [], kueche: [], leiter: ["l@pfadis.ch"] }, { slug: "pfila", hauptleitung: [], kueche: [], leiter: [] }];
+  const lists = { al: ["al@pfadis.ch"], coach: [] };
+  assert.equal(visibleCamp(camps, lists, "sola", "l@pfadis.ch")?.slug, "sola");
+  assert.equal(visibleCamp(camps, lists, "sola", "al@pfadis.ch")?.slug, "sola");
+  assert.equal(visibleCamp(camps, lists, "sola", "x@pfadis.ch"), undefined);
+  assert.equal(visibleCamp(camps, lists, "sola", undefined), undefined);
+  assert.equal(visibleCamp(camps, lists, "pfila", "x@pfadis.ch")?.slug, "pfila");
+  assert.equal(visibleCamp(camps, lists, "nope", "al@pfadis.ch"), undefined);
 });

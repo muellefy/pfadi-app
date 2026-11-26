@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { Suspense } from "react";
 import { notFound } from "next/navigation";
-import { getCamp, type CampConfig } from "@/lib/data/config";
+import type { CampConfig } from "@/lib/data/config";
+import { getMyCamp } from "@/lib/data/myRoles";
 import { loadPeople, loadProgram, loadRessorts, loadTermine } from "@/lib/data/loaders";
 import { campDates } from "@/lib/campDates";
 import { ErrorNotice } from "@/components/ErrorNotice";
@@ -22,7 +23,7 @@ const distance = (d: number) => (d === 0 ? "heute" : d === 1 ? "morgen" : `${d} 
  */
 export default async function Dashboard({ params }: { params: Promise<{ camp: string }> }) {
   const { camp: slug } = await params;
-  const camp = await getCamp(slug);
+  const camp = await getMyCamp(slug);
   if (!camp) notFound();
 
   return (

@@ -1,7 +1,6 @@
 "use server";
 import { revalidatePath } from "next/cache";
-import { getCamp } from "@/lib/data/config";
-import { mayAccess } from "@/lib/data/myRoles";
+import { getMyCamp } from "@/lib/data/myRoles";
 import { NO_ACCESS } from "@/lib/roles";
 import { download, getItemFresh, uploadNewRevision } from "@/lib/data/drive";
 import { serialize } from "@/lib/lock";
@@ -19,9 +18,9 @@ const CHANGED = "Die Datei hat sich geändert – bitte Seite neu laden.";
  * manual edit would be lost.
  */
 export async function toggleTermin(slug: string, row: number, was: string, done: boolean) {
-  const camp = await getCamp(slug);
+  const camp = await getMyCamp(slug);
+  if (!camp) return { ok: false, error: NO_ACCESS };
   if (!camp?.writeBack || !camp.drive.termineFileId) return { ok: false, error: "Zurückschreiben ist für dieses Lager deaktiviert." };
-  if (!(await mayAccess(camp))) return { ok: false, error: NO_ACCESS };
   const fileId = camp.drive.termineFileId;
   try {
     return await serialize(fileId, async () => {

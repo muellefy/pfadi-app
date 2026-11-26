@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { auth } from "@/auth";
-import { getCamp, getConfig } from "@/lib/data/config";
+import { getConfig } from "@/lib/data/config";
+import { getMyCamp } from "@/lib/data/myRoles";
 import { CAMP_ROLES, ROLE_LABEL, mergeRoles } from "@/lib/campRoles";
 import { canManageRoles, rolesOf } from "@/lib/roles";
 import { RoleEditor } from "@/components/RoleEditor";
@@ -16,7 +17,7 @@ const HINT = {
 /** Who has which role in this camp. The Hauptleitung (the camp's admin) and the AL manage it here. */
 export default async function RollenPage({ params }: { params: Promise<{ camp: string }> }) {
   const { camp: slug } = await params;
-  const [camp, config, session] = await Promise.all([getCamp(slug), getConfig(), auth()]);
+  const [camp, config, session] = await Promise.all([getMyCamp(slug), getConfig(), auth()]);
   if (!camp) notFound();
   const editable = canManageRoles(rolesOf(session?.user?.email, config.roles, camp));
   const fixed = camp.fixedRoles ?? mergeRoles({});

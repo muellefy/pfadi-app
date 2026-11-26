@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { getCamp } from "@/lib/data/config";
+import { getMyCamp } from "@/lib/data/myRoles";
 import { myRoles } from "@/lib/data/myRoles";
 import { canCook } from "@/lib/roles";
 import { loadMenu, loadPeople } from "@/lib/data/loaders";
@@ -15,7 +15,7 @@ export const metadata = { title: "Menüplan" };
 
 export default async function MenuePage({ params }: { params: Promise<{ camp: string }> }) {
   const { camp: slug } = await params;
-  const camp = await getCamp(slug);
+  const camp = await getMyCamp(slug);
   if (!camp) notFound();
   const [res, tn, leiter, roles] = await Promise.all([loadMenu(camp), loadPeople(camp, "tn"), loadPeople(camp, "leiter"), myRoles(camp)]);
   const cook = canCook(roles, camp);
