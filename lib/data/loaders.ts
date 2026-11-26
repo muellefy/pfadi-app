@@ -6,6 +6,7 @@ import { cached } from "../cache";
 import { toGrid, type Grid } from "../grid";
 import { parsePeople, type PersonTable } from "../people";
 import { parseTermine, type TermineSheet } from "../termine";
+import { campDates } from "../campDates";
 import { ecampConfigured, getProgram, type EcampProgram } from "./ecamp";
 import { parseBudget, type Budget } from "../budget";
 import { MENU_FILE, parseMenu, type MenuPlan } from "../menu";
@@ -38,8 +39,10 @@ function gridOf(item: DriveItem, sheet?: string): Promise<Grid> {
 export const loadTermine = cache((camp: CampConfig) =>
   attempt<TermineSheet>(async () => {
     if (!camp.drive.termineFileId) throw new Error("Keine Termin-Datei konfiguriert (drive.termineFileId).");
-    const source = await getItem(camp.drive.termineFileId);
-    return { data: parseTermine(await gridOf(source)), source };
+    // relative deadlines ("7 Wochen vorher") follow the eCamp/config camp dates
+    const [source, program] = await Promise.all([getItem(camp.drive.termineFileId), loadProgram(camp)]);
+    const dates = campDates(camp, program.ok ? program.data : null);
+    return { data: parseTermine(await gridOf(source), new Date(), dates), source };
   }),
 );
 
