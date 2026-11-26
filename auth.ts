@@ -97,8 +97,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       session.error = t.error;
       return session;
     },
-    authorized({ auth }) {
-      return Boolean(auth?.user);
-    },
+    // who may open which page is decided in proxy.ts
   },
 });

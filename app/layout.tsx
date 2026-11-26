@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { connection } from "next/server";
 // self-hosted via npm, so builds never fetch fonts from the internet
 import "@fontsource/barlow-condensed/latin-600.css";
 import "@fontsource/barlow-condensed/latin-700.css";
@@ -17,7 +18,9 @@ export const viewport: Viewport = { width: "device-width", initialScale: 1, view
   { media: "(prefers-color-scheme: dark)", color: "#0f1a16" },
 ] };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  // render every page per request: only then can Next.js put the CSP nonce (see proxy.ts) on its scripts
+  await connection();
   return (
     <html lang="de-CH">
       <body>{children}</body>
