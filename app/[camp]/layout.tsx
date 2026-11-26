@@ -4,6 +4,7 @@ import { auth, signOut } from "@/auth";
 import { getCamp, getConfig } from "@/lib/data/config";
 import { Nav } from "@/components/Nav";
 import { Tent } from "@/components/icons";
+import { rolesOf } from "@/lib/roles";
 
 export const dynamic = "force-dynamic";
 
@@ -11,6 +12,7 @@ export default async function CampLayout({ children, params }: { children: React
   const { camp: slug } = await params;
   const [config, camp, session] = await Promise.all([getConfig(), getCamp(slug), auth()]);
   if (!camp) notFound();
+  const roles = rolesOf(session?.user?.email, config.roles);
 
   return (
     <div className="shell">
@@ -25,7 +27,11 @@ export default async function CampLayout({ children, params }: { children: React
         </nav>
         <Nav slug={slug} />
         <div className="me">
-          <span>{session?.user?.name ?? session?.user?.email}</span>
+          <span>
+            {session?.user?.name ?? session?.user?.email}
+            {roles.al && <span className="pill" style={{ marginLeft: 6 }}>AL</span>}
+            {roles.coach && <span className="pill" style={{ marginLeft: 6 }}>Coach</span>}
+          </span>
           <form action={async () => { "use server"; await signOut({ redirectTo: "/login" }); }}>
             <button className="btn ghost small" style={{ paddingLeft: 0 }}>Abmelden</button>
           </form>
