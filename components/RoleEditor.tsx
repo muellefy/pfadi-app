@@ -1,7 +1,7 @@
 "use client";
 import { useState, useTransition, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
-import { updateRole } from "@/app/[camp]/rollen/actions";
+import { addRoleMembers, updateRole } from "@/app/[camp]/rollen/actions";
 import type { CampRole } from "@/lib/campRoles";
 
 type Props = { slug: string; role: CampRole; label: string; hint: string; emails: string[]; fixed: string[]; editable: boolean; domain: string };
@@ -22,7 +22,15 @@ export function RoleEditor({ slug, role, label, hint, emails, fixed, editable, d
   const submit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const form = e.currentTarget;
-    change(String(new FormData(form).get("email") ?? ""), true, () => form.reset());
+    const text = String(new FormData(form).get("emails") ?? "");
+    start(async () => {
+      setError("");
+      const res = await addRoleMembers(slug, role, text).catch(() => ({ ok: false as const, error: "Keine Verbindung." }));
+      if (!res.ok) { setError(res.error); return; }
+      form.reset();
+      if (res.invalid.length) setError(`${res.added} hinzugefügt. Nicht übernommen (keine gültige @${domain}-Adresse): ${res.invalid.join(", ")}`);
+      router.refresh();
+    });
   };
 
   return (
@@ -43,7 +51,7 @@ export function RoleEditor({ slug, role, label, hint, emails, fixed, editable, d
       )}
       {editable && (
         <form className="form" onSubmit={submit} style={{ marginTop: 12, display: "flex", gap: 8, flexWrap: "wrap" }}>
-          <input name="email" type="email" required placeholder={`name@${domain}`} aria-label={`E-Mail für ${label}`} style={{ flex: "1 1 200px" }} />
+          <textarea name="emails" required rows={2} placeholder={`name@${domain} – mehrere: eine pro Zeile oder mit Komma`} aria-label={`E-Mail-Adressen für ${label}`} style={{ flex: "1 1 220px", resize: "vertical" }} />
           <button className="btn primary" disabled={pending}>Hinzufügen</button>
         </form>
       )}

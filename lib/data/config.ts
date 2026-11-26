@@ -35,6 +35,7 @@ const Camp = z.object({
   // per-camp roles fixed here; more are managed in the app ($DATA_DIR/roles.json)
   hauptleitung: emailList,
   kueche: emailList,
+  leiter: emailList,
 });
 /** hauptleitung/kueche are merged with the app's roles; fixedRoles are the ones from the camp files. */
 export type CampConfig = z.infer<typeof Camp> & { fixedRoles?: CampRoleLists };

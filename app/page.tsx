@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { getConfig } from "@/lib/data/config";
 import { CURRENT_COOKIE, pickCurrent } from "@/lib/camps";
 import { auth } from "@/auth";
-import { rolesOf } from "@/lib/roles";
+import { canSeeCamp, rolesOf } from "@/lib/roles";
 
 export const dynamic = "force-dynamic";
 
@@ -13,9 +13,10 @@ export const dynamic = "force-dynamic";
  */
 export default async function Index() {
   const [config, jar, session] = await Promise.all([getConfig(), cookies(), auth()]);
-  const slug = pickCurrent(config.camps, jar.get(CURRENT_COOKIE)?.value);
+  const visible = config.camps.filter((c) => canSeeCamp(rolesOf(session?.user?.email, config.roles, c), c));
+  const slug = pickCurrent(visible, jar.get(CURRENT_COOKIE)?.value);
   if (!slug) redirect("/lager");
-  const camp = config.camps.find((c) => c.slug === slug);
+  const camp = visible.find((c) => c.slug === slug);
   const roles = camp ? rolesOf(session?.user?.email, config.roles, camp) : null;
   redirect(roles?.kueche && !roles.hauptleitung ? `/${slug}/menue` : `/${slug}`);
 }

@@ -9,6 +9,7 @@ export const metadata = { title: "Rollen" };
 
 const HINT = {
   hauptleitung: "Leitet das Lager: vergibt die Rollen, sieht die Coach-Durchsicht.",
+  leiter: "Wer hier steht, sieht dieses Lager. Sobald mindestens ein Leiter eingetragen ist, sehen alle anderen (ausser AL und Coach) das Lager in der App nicht mehr. Die Ordner im Drive bleiben so freigegeben, wie sie sind.",
   kueche: "Startet auf dem Menüplan. Sobald jemand Küche ist, dürfen nur Küche, Hauptleitung und Abteilungsleitung den Menüplan und Küchen-Buchungen ändern.",
 } as const;
 

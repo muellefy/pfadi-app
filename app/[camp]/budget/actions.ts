@@ -1,8 +1,8 @@
 "use server";
 import { revalidatePath } from "next/cache";
 import { getCamp } from "@/lib/data/config";
-import { myRoles } from "@/lib/data/myRoles";
-import { canCook, KITCHEN_ONLY, kitchenBlocked } from "@/lib/roles";
+import { mayAccess, myRoles } from "@/lib/data/myRoles";
+import { canCook, KITCHEN_ONLY, kitchenBlocked, NO_ACCESS } from "@/lib/roles";
 import { parseBudget, type Budget } from "@/lib/budget";
 import { BUDGET_FILE } from "@/lib/data/loaders";
 import { download, getItemFresh, resolveTableFile, uploadNewRevision, XLSX } from "@/lib/data/drive";
@@ -22,6 +22,7 @@ const CHANGED = "Die Datei wurde inzwischen geändert – bitte Seite neu laden 
 async function edit(slug: string, plan: (b: Budget) => { sheet: string; writes: CellWrite[] } | string): Promise<Result> {
   const camp = await getCamp(slug);
   if (!camp?.writeBack) return { ok: false, error: "Zurückschreiben ist für dieses Lager deaktiviert (writeBack)." };
+  if (!(await mayAccess(camp))) return { ok: false, error: NO_ACCESS };
   if (!camp.drive.budgetFileId) return { ok: false, error: "Keine Budget-Datei konfiguriert." };
   try {
     const file = await resolveTableFile(camp.drive.budgetFileId, BUDGET_FILE);

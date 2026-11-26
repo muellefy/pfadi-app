@@ -9,7 +9,7 @@ import { campDates } from "@/lib/campDates";
 import { daysUntil } from "@/lib/dates";
 import { ChooseCampButton } from "@/components/ChooseCampButton";
 import { CampStatus } from "@/components/CampStatus";
-import { rolesOf } from "@/lib/roles";
+import { canSeeCamp, rolesOf } from "@/lib/roles";
 
 export const metadata = { title: "Alle Lager" };
 
@@ -23,7 +23,7 @@ export default async function LagerPage() {
   const chosen = jar.get(CURRENT_COOKIE)?.value;
   // eCamp dates win over the config ones; the program is cached, so this is cheap
   const camps = await Promise.all(
-    config.camps.map(async (c) => {
+    config.camps.filter((c) => canSeeCamp(rolesOf(session?.user?.email, config.roles, c), c)).map(async (c) => {
       const p = await loadProgram(c);
       return { ...c, ...campDates(c, p.ok ? p.data : null) };
     }),

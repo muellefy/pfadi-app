@@ -1,23 +1,25 @@
 /**
- * Per-camp roles (Hauptleitung, Küche): the lists in camps.json plus the ones the
+ * Per-camp roles (Hauptleitung, Küche, Leiter): the lists in camps.json plus the ones the
  * Hauptleitung manages in the app ($DATA_DIR/roles.json). Pure rules, no file access.
  */
 import { canManageRoles, type Roles } from "./roles.ts";
 
-export const CAMP_ROLES = ["hauptleitung", "kueche"] as const;
+export const CAMP_ROLES = ["hauptleitung", "kueche", "leiter"] as const;
 export type CampRole = (typeof CAMP_ROLES)[number];
 export type CampRoleLists = Record<CampRole, string[]>;
 
-export const ROLE_LABEL: Record<CampRole, string> = { hauptleitung: "Hauptleitung", kueche: "Küche" };
+export const ROLE_LABEL: Record<CampRole, string> = { hauptleitung: "Hauptleitung", kueche: "Küche", leiter: "Leiter" };
 
 const norm = (s: string) => s.trim().toLowerCase();
 const uniq = (list: string[]) => [...new Set(list.map(norm).filter(Boolean))];
 
 export function mergeRoles(base: Partial<CampRoleLists>, stored?: Partial<CampRoleLists>): CampRoleLists {
-  return {
-    hauptleitung: uniq([...(base.hauptleitung ?? []), ...(stored?.hauptleitung ?? [])]),
-    kueche: uniq([...(base.kueche ?? []), ...(stored?.kueche ?? [])]),
-  };
+  return Object.fromEntries(CAMP_ROLES.map((r) => [r, uniq([...(base[r] ?? []), ...(stored?.[r] ?? [])])])) as CampRoleLists;
+}
+
+/** A pasted list of addresses: one per line, or split by commas, semicolons or spaces; "Name <a@b.ch>" works too. */
+export function splitEmails(text: string): string[] {
+  return text.replace(/[^,;\n<>]*<([^>]+)>/g, " $1 ").replace(/[<>]/g, " ").split(/[\s,;]+/).map(norm).filter(Boolean);
 }
 
 /** null when the address may get a role, else the reason. */

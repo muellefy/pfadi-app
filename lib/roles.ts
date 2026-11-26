@@ -1,17 +1,17 @@
 /**
  * Who is AL or J+S Coach (whole Abteilung, top-level lists in camps.json) and who is
- * Hauptleitung of a camp (that camp's own list). Roles never widen Drive access.
+ * Hauptleitung, Küche or Leiter of a camp (that camp's own lists). Roles never widen Drive access.
  */
 export type RoleLists = { al: string[]; coach: string[] };
-export type Roles = { al: boolean; coach: boolean; hauptleitung: boolean; kueche: boolean };
+export type Roles = { al: boolean; coach: boolean; hauptleitung: boolean; kueche: boolean; leiter: boolean };
 
 const norm = (s: string) => s.trim().toLowerCase();
 
-export function rolesOf(email: string | null | undefined, lists: RoleLists, camp?: { hauptleitung: string[]; kueche: string[] }): Roles {
-  if (!email) return { al: false, coach: false, hauptleitung: false, kueche: false };
+export function rolesOf(email: string | null | undefined, lists: RoleLists, camp?: { hauptleitung: string[]; kueche: string[]; leiter?: string[] }): Roles {
+  if (!email) return { al: false, coach: false, hauptleitung: false, kueche: false, leiter: false };
   const me = norm(email);
   const has = (list: string[]) => list.some((e) => norm(e) === me);
-  return { al: has(lists.al), coach: has(lists.coach), hauptleitung: has(camp?.hauptleitung ?? []), kueche: has(camp?.kueche ?? []) };
+  return { al: has(lists.al), coach: has(lists.coach), hauptleitung: has(camp?.hauptleitung ?? []), kueche: has(camp?.kueche ?? []), leiter: has(camp?.leiter ?? []) };
 }
 
 /**
@@ -19,6 +19,13 @@ export function rolesOf(email: string | null | undefined, lists: RoleLists, camp
  * come through the shared eCamp account, not the person's own access, so it stays narrow.
  */
 export const canReview = (r: Roles) => r.al || r.coach || r.hauptleitung;
+
+/**
+ * Who sees a camp in the app. Without Leiter it's open to everyone (as before roles); once the
+ * Hauptleitung added Leiter, only its members and the AL/Coach. Hides, doesn't lock: Drive decides files.
+ */
+export const canSeeCamp = (r: Roles, camp: { leiter: string[] }) =>
+  camp.leiter.length === 0 || r.al || r.coach || r.hauptleitung || r.kueche || r.leiter;
 
 /** Who may assign the roles of a camp: its Hauptleitung (the camp's admin) and the AL. */
 export const canManageRoles = (r: Roles) => r.al || r.hauptleitung;
@@ -45,5 +52,7 @@ export function isKitchenCategory(category: string): boolean {
 /** A booking change someone outside the kitchen may not make: writing a kitchen category, or overwriting one. */
 export const kitchenBlocked = (cook: boolean, category: string, before?: string) =>
   !cook && (isKitchenCategory(category) || (before !== undefined && isKitchenCategory(before)));
+
+export const NO_ACCESS = "Du bist in diesem Lager nicht als Leiter eingetragen. Die Hauptleitung kann dich unter «Rollen im Lager» hinzufügen.";
 
 export const KITCHEN_ONLY = "Das dürfen nur das Küchenteam, die Hauptleitung und die Abteilungsleitung ändern (Rollen im Lager).";

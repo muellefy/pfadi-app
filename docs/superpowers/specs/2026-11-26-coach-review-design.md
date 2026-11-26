@@ -123,3 +123,22 @@ book in kitchen budget categories; the admin page manages roles only; one releas
   section is Verpflegung/Küche/Essen/Lebensmittel (template: only "Verpflegung: …"); names without
   a section match those whole words. With no Küche person, everything stays as before.
 - Checked on the server in the actions; the UI only hides what would fail.
+
+---
+
+# Leiter role: only see your own camps (asked 26.11.2026)
+
+Asked for: a per-camp role "Leiter" the Hauptleitung fills with all leaders, so people only
+see the camps they belong to, even though Drive would let them open other camps' folders.
+Decided by the user: a camp is hidden only once it has at least one Leiter; the Hauptleitung
+adds many at once by pasting a list.
+
+- Roles per camp: hauptleitung, kueche, leiter (same store, same page, same rules).
+- Members of a camp: its Leiter, Küche and Hauptleitung. AL and Coach see every camp.
+- A camp with no Leiter yet is visible to everyone (as today). With ≥ 1 Leiter, non-members
+  don't see it in "Alle Lager", the camp switcher or "/", and its pages show "Kein Zugang".
+  Its write actions (Termine, budget, menu) refuse non-members too.
+- Adding: the field takes a pasted list (lines, commas, semicolons or spaces); valid
+  @domain addresses are added, the rest are reported back.
+- Not a lock on the files: Drive sharing still decides. /api/drive/<id> serves any file the
+  person may open in Drive, as before. The PR and the page say so.
