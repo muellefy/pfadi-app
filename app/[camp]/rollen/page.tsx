@@ -9,7 +9,7 @@ export const metadata = { title: "Rollen" };
 
 const HINT = {
   hauptleitung: "Leitet das Lager: vergibt die Rollen, sieht die Coach-Durchsicht.",
-  kueche: "Startet auf dem Menüplan. Sobald jemand Küche ist, dürfen nur Küche und Hauptleitung den Menüplan und Küchen-Buchungen ändern.",
+  kueche: "Startet auf dem Menüplan. Sobald jemand Küche ist, dürfen nur Küche, Hauptleitung und Abteilungsleitung den Menüplan und Küchen-Buchungen ändern.",
 } as const;
 
 /** Who has which role in this camp. The Hauptleitung (the camp's admin) and the AL manage it here. */
@@ -34,7 +34,7 @@ export default async function RollenPage({ params }: { params: Promise<{ camp: s
       </header>
       <div className="grid grid-2">
         {CAMP_ROLES.map((r) => (
-          <RoleEditor key={r} slug={slug} role={r} label={ROLE_LABEL[r]} hint={HINT[r]} emails={camp[r]} fixed={fixed[r]} editable={editable} />
+          <RoleEditor key={r} slug={slug} role={r} label={ROLE_LABEL[r]} hint={HINT[r]} emails={camp[r]} fixed={fixed[r]} editable={editable} domain={(process.env.ALLOWED_DOMAIN ?? "pfadis.ch").toLowerCase()} />
         ))}
       </div>
       <section className="card" style={{ marginTop: 20 }}>

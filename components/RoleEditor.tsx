@@ -4,10 +4,10 @@ import { useRouter } from "next/navigation";
 import { updateRole } from "@/app/[camp]/rollen/actions";
 import type { CampRole } from "@/lib/campRoles";
 
-type Props = { slug: string; role: CampRole; label: string; hint: string; emails: string[]; fixed: string[]; editable: boolean };
+type Props = { slug: string; role: CampRole; label: string; hint: string; emails: string[]; fixed: string[]; editable: boolean; domain: string };
 
 /** One camp role: who has it, and (for the Hauptleitung/AL) add and remove. */
-export function RoleEditor({ slug, role, label, hint, emails, fixed, editable }: Props) {
+export function RoleEditor({ slug, role, label, hint, emails, fixed, editable, domain }: Props) {
   const [error, setError] = useState("");
   const [pending, start] = useTransition();
   const router = useRouter();
@@ -43,7 +43,7 @@ export function RoleEditor({ slug, role, label, hint, emails, fixed, editable }:
       )}
       {editable && (
         <form className="form" onSubmit={submit} style={{ marginTop: 12, display: "flex", gap: 8, flexWrap: "wrap" }}>
-          <input name="email" type="email" required placeholder="name@pfadis.ch" aria-label={`E-Mail für ${label}`} style={{ flex: "1 1 200px" }} />
+          <input name="email" type="email" required placeholder={`name@${domain}`} aria-label={`E-Mail für ${label}`} style={{ flex: "1 1 200px" }} />
           <button className="btn primary" disabled={pending}>Hinzufügen</button>
         </form>
       )}

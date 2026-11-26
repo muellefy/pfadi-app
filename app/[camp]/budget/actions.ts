@@ -2,7 +2,7 @@
 import { revalidatePath } from "next/cache";
 import { getCamp } from "@/lib/data/config";
 import { myRoles } from "@/lib/data/myRoles";
-import { canCook, isKitchenCategory, KITCHEN_ONLY } from "@/lib/roles";
+import { canCook, KITCHEN_ONLY, kitchenBlocked } from "@/lib/roles";
 import { parseBudget, type Budget } from "@/lib/budget";
 import { BUDGET_FILE } from "@/lib/data/loaders";
 import { download, getItemFresh, resolveTableFile, uploadNewRevision, XLSX } from "@/lib/data/drive";
@@ -92,7 +92,7 @@ export async function saveBooking(slug: string, input: BookingInput, existing?: 
   return edit(slug, (b) => {
     // a kitchen booking may neither be written nor overwritten by someone outside the kitchen
     const before = existing && b.journal.bookings.find((x) => x.row === existing.row);
-    if (!cook && (isKitchenCategory(String(input.category ?? "")) || (before && isKitchenCategory(before.category)))) return KITCHEN_ONLY;
+    if (kitchenBlocked(cook, String(input.category ?? ""), before?.category)) return KITCHEN_ONLY;
     let row: number;
     if (existing) {
       const current = b.journal.bookings.find((x) => x.row === existing.row);
@@ -113,7 +113,7 @@ export async function deleteBooking(slug: string, row: number, expectText: strin
   return edit(slug, (b) => {
     const current = b.journal.bookings.find((x) => x.row === row);
     if (!current || current.text !== expectText) return CHANGED;
-    if (!cook && isKitchenCategory(current.category)) return KITCHEN_ONLY;
+    if (kitchenBlocked(cook, current.category)) return KITCHEN_ONLY;
     return clearBooking(b, row);
   });
 }

@@ -63,8 +63,10 @@ export async function createCamp(_prev: CreateState, form: FormData): Promise<Cr
         writeBack: true,
       });
       // whoever creates the camp leads it (and can hand the role on in the app)
+      // the camp exists now: a failed roles write must not report the whole creation as failed
       if (creator) {
-        await serialize("roles", () => writeCampRoles(slug, { hauptleitung: [creator.toLowerCase()], kueche: [] }));
+        await serialize("roles", () => writeCampRoles(slug, { hauptleitung: [creator.toLowerCase()], kueche: [] }))
+          .catch((e) => console.error(`camp ${slug}: Hauptleitung not saved:`, e));
         forgetConfig();
       }
     });
