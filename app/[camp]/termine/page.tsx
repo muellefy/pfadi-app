@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { getCamp } from "@/lib/data/config";
+import { getMyCamp } from "@/lib/data/myRoles";
 import { loadTermine } from "@/lib/data/loaders";
 import { ErrorNotice } from "@/components/ErrorNotice";
 import { Source } from "@/components/Source";
@@ -9,7 +9,7 @@ export const metadata = { title: "Termine" };
 
 export default async function TerminePage({ params }: { params: Promise<{ camp: string }> }) {
   const { camp: slug } = await params;
-  const camp = await getCamp(slug);
+  const camp = await getMyCamp(slug);
   if (!camp) notFound();
   const res = await loadTermine(camp);
 

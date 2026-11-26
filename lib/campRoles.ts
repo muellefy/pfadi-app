@@ -1,23 +1,38 @@
 /**
- * Per-camp roles (Hauptleitung, Küche): the lists in camps.json plus the ones the
+ * Per-camp roles (Hauptleitung, Küche, Leiter): the lists in camps.json plus the ones the
  * Hauptleitung manages in the app ($DATA_DIR/roles.json). Pure rules, no file access.
  */
 import { canManageRoles, type Roles } from "./roles.ts";
 
-export const CAMP_ROLES = ["hauptleitung", "kueche"] as const;
+export const CAMP_ROLES = ["hauptleitung", "kueche", "leiter"] as const;
 export type CampRole = (typeof CAMP_ROLES)[number];
 export type CampRoleLists = Record<CampRole, string[]>;
 
-export const ROLE_LABEL: Record<CampRole, string> = { hauptleitung: "Hauptleitung", kueche: "Küche" };
+export const ROLE_LABEL: Record<CampRole, string> = { hauptleitung: "Hauptleitung", kueche: "Küche", leiter: "Leiter" };
 
 const norm = (s: string) => s.trim().toLowerCase();
 const uniq = (list: string[]) => [...new Set(list.map(norm).filter(Boolean))];
 
 export function mergeRoles(base: Partial<CampRoleLists>, stored?: Partial<CampRoleLists>): CampRoleLists {
-  return {
-    hauptleitung: uniq([...(base.hauptleitung ?? []), ...(stored?.hauptleitung ?? [])]),
-    kueche: uniq([...(base.kueche ?? []), ...(stored?.kueche ?? [])]),
-  };
+  return Object.fromEntries(CAMP_ROLES.map((r) => [r, uniq([...(base[r] ?? []), ...(stored?.[r] ?? [])])])) as CampRoleLists;
+}
+
+/**
+ * A pasted list of addresses: one per line, or split by commas, semicolons or spaces;
+ * "Name <a@b.ch>" and "mailto:" as mail programs copy them. Linear in the input (no backtracking).
+ */
+export function splitEmails(text: string): string[] {
+  const out: string[] = [];
+  for (const part of text.split(/[,;\n]+/)) {
+    const open = part.indexOf("<");
+    const close = open >= 0 ? part.indexOf(">", open) : -1;
+    const tokens = close > open ? [part.slice(open + 1, close)] : part.split(/\s+/);
+    for (const t of tokens) {
+      const e = norm(t.replace(/[<>]/g, "").replace(/^mailto:/i, ""));
+      if (e) out.push(e);
+    }
+  }
+  return out;
 }
 
 /** null when the address may get a role, else the reason. */

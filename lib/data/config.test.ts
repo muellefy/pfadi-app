@@ -25,7 +25,7 @@ test("getConfig: roles from roles.json are added to the camp, camps.json ones st
   const sola = await getCamp("sola");
   assert.deepEqual(sola?.hauptleitung, ["fix@pfadis.ch", "app@pfadis.ch"]);
   assert.deepEqual(sola?.kueche, ["k@pfadis.ch"]);
-  assert.deepEqual(sola?.fixedRoles, { hauptleitung: ["fix@pfadis.ch"], kueche: [] });
+  assert.deepEqual(sola?.fixedRoles, { hauptleitung: ["fix@pfadis.ch"], kueche: [], leiter: [] });
 });
 
 test("getConfig: a single email without brackets counts as a list", async () => {

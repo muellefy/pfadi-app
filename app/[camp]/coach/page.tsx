@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { auth } from "@/auth";
-import { getCamp, getConfig } from "@/lib/data/config";
+import { getConfig } from "@/lib/data/config";
+import { getMyCamp } from "@/lib/data/myRoles";
 import { canReview, rolesOf } from "@/lib/roles";
 import { loadCoach } from "@/lib/data/loaders";
 import { checkDays, gapsOf } from "@/lib/coach";
@@ -19,7 +20,7 @@ export default async function CoachPage({ params, searchParams }: {
   searchParams: Promise<{ luecken?: string }>;
 }) {
   const [{ camp: slug }, { luecken }] = await Promise.all([params, searchParams]);
-  const [camp, config, session] = await Promise.all([getCamp(slug), getConfig(), auth()]);
+  const [camp, config, session] = await Promise.all([getMyCamp(slug), getConfig(), auth()]);
   if (!camp) notFound();
   if (!canReview(rolesOf(session?.user?.email, config.roles, camp))) {
     return (

@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { getCamp } from "@/lib/data/config";
+import { getMyCamp } from "@/lib/data/myRoles";
 import { loadProgram } from "@/lib/data/loaders";
 import { ErrorNotice } from "@/components/ErrorNotice";
 import { ProgramView } from "@/components/ProgramView";
@@ -10,7 +10,7 @@ export const metadata = { title: "Programm" };
 
 export default async function ProgrammPage({ params }: { params: Promise<{ camp: string }> }) {
   const { camp: slug } = await params;
-  const camp = await getCamp(slug);
+  const camp = await getMyCamp(slug);
   if (!camp) notFound();
   const res = await loadProgram(camp);
 

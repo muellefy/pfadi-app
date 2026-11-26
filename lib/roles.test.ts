@@ -1,15 +1,15 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { canCook, canManageRoles, canReview, isKitchenCategory, kitchenBlocked, rolesOf } from "./roles.ts";
+import { canCook, canManageRoles, canReview, canSeeCamp, isKitchenCategory, kitchenBlocked, rolesOf, visibleCamp } from "./roles.ts";
 
-const none = { al: false, coach: false, hauptleitung: false, kueche: false };
+const none = { al: false, coach: false, hauptleitung: false, kueche: false, leiter: false };
 
 test("rolesOf: matches emails regardless of case and spaces", () => {
   assert.deepEqual(rolesOf("AL@Pfadis.ch ", { al: ["al@pfadis.ch"], coach: [] }), { ...none, al: true });
 });
 
 test("rolesOf: no email, no role", () => {
-  assert.deepEqual(rolesOf(undefined, { al: ["x@pfadis.ch"], coach: ["x@pfadis.ch"] }, { hauptleitung: ["x@pfadis.ch"], kueche: ["x@pfadis.ch"] }), none);
+  assert.deepEqual(rolesOf(undefined, { al: ["x@pfadis.ch"], coach: ["x@pfadis.ch"] }, { hauptleitung: ["x@pfadis.ch"], kueche: ["x@pfadis.ch"], leiter: ["x@pfadis.ch"] }), none);
 });
 
 test("rolesOf: list entries are trimmed and lower-cased too", () => {
@@ -72,4 +72,29 @@ test("kitchenBlocked: outsiders can neither write nor overwrite kitchen bookings
   assert.equal(kitchenBlocked(false, "Verpflegung: weiteres", "Material: weiteres"), true); // other → kitchen
   assert.equal(kitchenBlocked(false, "Material: weiteres", "Programm: weiteres"), false);
   assert.equal(kitchenBlocked(true, "Verpflegung: weiteres", "Verpflegung: weiteres"), false);
+});
+
+test("rolesOf: Leiter of the camp", () => {
+  assert.equal(rolesOf("l@pfadis.ch", { al: [], coach: [] }, { hauptleitung: [], kueche: [], leiter: ["L@pfadis.ch"] }).leiter, true);
+});
+
+test("canSeeCamp: a camp without Leiter is open to everyone", () => {
+  assert.equal(canSeeCamp(none, { leiter: [] }), true);
+});
+
+test("canSeeCamp: with Leiter only members, AL and Coach", () => {
+  const camp = { leiter: ["l@pfadis.ch"] };
+  assert.equal(canSeeCamp(none, camp), false);
+  for (const r of ["leiter", "kueche", "hauptleitung", "al", "coach"] as const) assert.equal(canSeeCamp({ ...none, [r]: true }, camp), true, r);
+});
+
+test("visibleCamp: a member gets the camp, an outsider nothing, an unknown slug nothing", () => {
+  const camps = [{ slug: "sola", hauptleitung: [], kueche: [], leiter: ["l@pfadis.ch"] }, { slug: "pfila", hauptleitung: [], kueche: [], leiter: [] }];
+  const lists = { al: ["al@pfadis.ch"], coach: [] };
+  assert.equal(visibleCamp(camps, lists, "sola", "l@pfadis.ch")?.slug, "sola");
+  assert.equal(visibleCamp(camps, lists, "sola", "al@pfadis.ch")?.slug, "sola");
+  assert.equal(visibleCamp(camps, lists, "sola", "x@pfadis.ch"), undefined);
+  assert.equal(visibleCamp(camps, lists, "sola", undefined), undefined);
+  assert.equal(visibleCamp(camps, lists, "pfila", "x@pfadis.ch")?.slug, "pfila");
+  assert.equal(visibleCamp(camps, lists, "nope", "al@pfadis.ch"), undefined);
 });

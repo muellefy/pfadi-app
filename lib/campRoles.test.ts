@@ -1,8 +1,8 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { authorizeRoleChange, changeRole, checkRoleEmail, mergeRoles } from "./campRoles.ts";
+import { authorizeRoleChange, changeRole, checkRoleEmail, mergeRoles, splitEmails } from "./campRoles.ts";
 
-const lists = (hauptleitung: string[] = [], kueche: string[] = []) => ({ hauptleitung, kueche });
+const lists = (hauptleitung: string[] = [], kueche: string[] = [], leiter: string[] = []) => ({ hauptleitung, kueche, leiter });
 
 test("mergeRoles: camps.json and app lists together, lower-case, no duplicates", () => {
   assert.deepEqual(mergeRoles({ hauptleitung: ["A@pfadis.ch"] }, { hauptleitung: ["a@pfadis.ch ", "b@pfadis.ch"], kueche: ["k@pfadis.ch"] }),
@@ -38,7 +38,7 @@ test("changeRole: the last Hauptleitung stays", () => {
   assert.ok("error" in r && /letzte Hauptleitung/.test(r.error));
 });
 
-const who = (r: Partial<{ al: boolean; coach: boolean; hauptleitung: boolean; kueche: boolean }>) => ({ al: false, coach: false, hauptleitung: false, kueche: false, ...r });
+const who = (r: Partial<{ al: boolean; coach: boolean; hauptleitung: boolean; kueche: boolean; leiter: boolean }>) => ({ al: false, coach: false, hauptleitung: false, kueche: false, leiter: false, ...r });
 
 test("authorizeRoleChange: only this camp's Hauptleitung and the AL", () => {
   assert.equal(authorizeRoleChange(who({ hauptleitung: true }), "kueche", "k@pfadis.ch", true, "pfadis.ch"), null);
@@ -59,4 +59,32 @@ test("authorizeRoleChange: added addresses must be of the domain", () => {
   assert.match(authorizeRoleChange(who({ al: true }), "kueche", "nope", true, "pfadis.ch") ?? "", /E-Mail/);
   // removing an odd old entry must stay possible
   assert.equal(authorizeRoleChange(who({ al: true }), "kueche", "nope", false, "pfadis.ch"), null);
+});
+
+test("mergeRoles: Leiter lists merge like the others", () => {
+  assert.deepEqual(mergeRoles({ leiter: ["A@pfadis.ch"] }, { leiter: ["b@pfadis.ch"] }).leiter, ["a@pfadis.ch", "b@pfadis.ch"]);
+});
+
+test("changeRole: a Leiter can be added", () => {
+  assert.deepEqual(changeRole(lists(), lists(), "leiter", "L@pfadis.ch", true), { stored: lists([], [], ["l@pfadis.ch"]) });
+});
+
+test("splitEmails: a pasted list, by lines, commas, semicolons or spaces", () => {
+  assert.deepEqual(splitEmails("a@pfadis.ch, b@pfadis.ch\nc@pfadis.ch;d@pfadis.ch  e\n\n"), ["a@pfadis.ch", "b@pfadis.ch", "c@pfadis.ch", "d@pfadis.ch", "e"]);
+  assert.deepEqual(splitEmails("  "), []);
+});
+
+test("splitEmails: names in angle brackets, as mail programs copy them", () => {
+  assert.deepEqual(splitEmails("Anna Muster <anna@pfadis.ch>, ben@pfadis.ch"), ["anna@pfadis.ch", "ben@pfadis.ch"]);
+});
+
+test("splitEmails: a huge paste is split in linear time", () => {
+  const t0 = performance.now();
+  splitEmails("a".repeat(1_000_000));
+  splitEmails("Anna Muster ".repeat(80_000));
+  assert.ok(performance.now() - t0 < 500, `took ${Math.round(performance.now() - t0)} ms`);
+});
+
+test("splitEmails: a comma inside the name and mailto: links", () => {
+  assert.deepEqual(splitEmails("Muster, Anna <anna@pfadis.ch>; mailto:ben@pfadis.ch"), ["muster", "anna@pfadis.ch", "ben@pfadis.ch"]);
 });
