@@ -17,7 +17,7 @@ export async function CampStatus({ camp }: { camp: CampConfig }) {
     termine: termine.ok ? termine.data : undefined,
     tn: tn.ok ? tn.data.rows.length : undefined,
     budget: budget?.ok ? budget.data : undefined,
-    days: program.ok && program.data ? checkDays(program.data.entries) : undefined,
+    days: program.ok && program.data ? checkDays(program.data.entries, program.data.periods) : undefined,
   });
   const n = (v: number | null) => (v == null ? "–" : String(v));
   return (
