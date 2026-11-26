@@ -4,7 +4,7 @@ import { auth, signOut } from "@/auth";
 import { getCamp, getConfig } from "@/lib/data/config";
 import { Nav } from "@/components/Nav";
 import { Tent } from "@/components/icons";
-import { rolesOf } from "@/lib/roles";
+import { canReview, rolesOf } from "@/lib/roles";
 
 export const dynamic = "force-dynamic";
 
@@ -25,7 +25,7 @@ export default async function CampLayout({ children, params }: { children: React
           ))}
           <Link href="/lager" className="all">Alle Lager / neues Lager</Link>
         </nav>
-        <Nav slug={slug} />
+        <Nav slug={slug} coach={canReview(roles)} />
         <div className="me">
           <span>
             {session?.user?.name ?? session?.user?.email}
