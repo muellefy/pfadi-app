@@ -282,6 +282,7 @@ button, input, select { font: inherit; color: inherit; }
 .facts span { font-size: 14px; color: var(--muted); }
 .facts a:hover span { color: var(--ink); text-decoration: underline; }
 .facts .alert b { color: var(--rust); }
+.camp-status .alert { color: var(--rust); font-weight: 600; }
 @media (max-width: 600px) {
   .facts a { flex-basis: 50%; padding-left: 0 !important; border-left: 0 !important; }
 }
