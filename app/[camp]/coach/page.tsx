@@ -21,10 +21,10 @@ export default async function CoachPage({ params, searchParams }: {
   const [{ camp: slug }, { luecken }] = await Promise.all([params, searchParams]);
   const [camp, config, session] = await Promise.all([getCamp(slug), getConfig(), auth()]);
   if (!camp) notFound();
-  if (!canReview(rolesOf(session?.user?.email, config.roles))) {
+  if (!canReview(rolesOf(session?.user?.email, config.roles, camp))) {
     return (
       <div className="notice">
-        Die Coach-Durchsicht ist nur für die Abteilungsleitung und J+S-Coaches (Rollen in <code>config/camps.json</code>).
+        Die Coach-Durchsicht ist nur für die Abteilungsleitung, J+S-Coaches und die Hauptleitung dieses Lagers (Rollen in <code>config/camps.json</code>).
       </div>
     );
   }

@@ -18,7 +18,8 @@
         "menuFileId": "ID_DES_KUECHE_ORDNERS"
       },
       "ecampCampId": "ID_AUS_DER_ECAMP_URL",
-      "writeBack": true
+      "writeBack": true,
+      "hauptleitung": ["hauptleitung@pfadis.ch"]
     }
   ]
 }

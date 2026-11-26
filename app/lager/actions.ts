@@ -27,7 +27,8 @@ export async function createCamp(_prev: CreateState, form: FormData): Promise<Cr
   const v = Object.fromEntries([...form.entries()].map(([k, x]) => [k, String(x).trim()]));
   const fail = (error: string): CreateState => ({ error, values: v });
 
-  if (!(await auth())?.user) return fail("Bitte neu anmelden.");
+  const session = await auth();
+  if (!session?.user) return fail("Bitte neu anmelden.");
   if (!v.name) return fail("Der Lagername fehlt.");
   const slug = slugify(v.slug || v.name);
   if (!slug || RESERVED_SLUGS.includes(slug)) return fail("Bitte einen anderen Kurznamen wählen.");
@@ -58,6 +59,8 @@ export async function createCamp(_prev: CreateState, form: FormData): Promise<Cr
         drive: { rootFolderId: copy.root.id, ...detectFiles(copy.entries) },
         ecampCampId: ecamp ?? undefined,
         writeBack: true,
+        // whoever creates the camp leads it; more names can be added in camps.json
+        hauptleitung: session.user.email ? [session.user.email] : [],
       });
     });
   } catch (e) {
