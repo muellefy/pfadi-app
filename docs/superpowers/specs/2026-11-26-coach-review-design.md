@@ -96,3 +96,29 @@ Order: 1 roles → 2 coach review page (above) → 3 coach checklist → 4 recei
   camp only delays its own card (the "slow" fix for this page). The cache durations stay
   as they are; a longer Drive cache is a separate decision (it trades freshness of
   Drive permissions for speed).
+
+---
+
+# Camp roles page and Küche role (asked 26.11.2026)
+
+Asked for: a Küche role; a page where the Hauptleitung manages all roles of a camp;
+"Hauptleitung should be like the admin for the camp". Decided by the user:
+Küche opens on the Menüplan and only Küche/Hauptleitung may edit the Menüplan and
+book in kitchen budget categories; the admin page manages roles only; one release after both.
+
+## Roles page (`/<camp>/rollen`)
+- Per-camp roles: `hauptleitung`, `kueche`. AL and Coach stay Abteilung-wide in camps.json.
+- Stored by the app in `$DATA_DIR/roles.json` (`{ "<slug>": { "hauptleitung": [], "kueche": [] } }`,
+  atomic write, one write at a time). Lists in camps.json (`camps[].hauptleitung`, `camps[].kueche`)
+  are added on top and can't be removed in the app.
+- Everyone logged in sees who has which role; the camp's Hauptleitung and the AL can add and remove.
+- Emails must be valid and end in `@<ALLOWED_DOMAIN>`. The last Hauptleitung can't be removed
+  (the AL can always add one, since AL lives in camps.json).
+
+## Küche role
+- The sidebar tag "Küche"; "/" opens the Menüplan for Küche people (not for the Hauptleitung);
+  Menü moves first in their navigation.
+- Once a camp has at least one Küche person, only Küche, Hauptleitung and AL may change the
+  Menüplan and add/change/delete bookings in kitchen categories (name contains Essen, Küche,
+  Verpflegung or Lebensmittel). With no Küche person, everything stays as before.
+- Checked on the server in the actions; the UI only hides what would fail.

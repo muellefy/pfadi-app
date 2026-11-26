@@ -32,7 +32,9 @@ export default async function CampLayout({ children, params }: { children: React
             {roles.al && <span className="pill" style={{ marginLeft: 6 }}>AL</span>}
             {roles.coach && <span className="pill" style={{ marginLeft: 6 }}>Coach</span>}
             {roles.hauptleitung && <span className="pill" style={{ marginLeft: 6 }}>Hauptleitung</span>}
+            {roles.kueche && <span className="pill" style={{ marginLeft: 6 }}>Küche</span>}
           </span>
+          <Link href={`/${slug}/rollen`} className="small">Rollen im Lager</Link>
           <form action={async () => { "use server"; await signOut({ redirectTo: "/login" }); }}>
             <button className="btn ghost small" style={{ paddingLeft: 0 }}>Abmelden</button>
           </form>

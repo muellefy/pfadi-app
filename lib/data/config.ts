@@ -1,7 +1,10 @@
 import "server-only";
-import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
+import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { z } from "zod";
+import { mergeRoles, type CampRoleLists } from "../campRoles.ts";
+import { readRoleStore } from "./campRolesStore.ts";
+import { dataPath, writeJson } from "./dataDir.ts";
 
 /**
  * Camps come from two files, merged:
@@ -28,9 +31,12 @@ const Camp = z.object({
   }),
   ecampCampId: z.string().optional(), // id from the eCamp URL: app.ecamp3.ch/camps/<id>/...
   writeBack: z.boolean().default(false),
-  hauptleitung: z.array(z.string()).default([]), // emails: may open the Coach page of this camp
+  // per-camp roles fixed here; more are managed in the app ($DATA_DIR/roles.json)
+  hauptleitung: z.array(z.string()).default([]),
+  kueche: z.array(z.string()).default([]),
 });
-export type CampConfig = z.infer<typeof Camp>;
+/** hauptleitung/kueche are merged with the app's roles; fixedRoles are the ones from the camp files. */
+export type CampConfig = z.infer<typeof Camp> & { fixedRoles?: CampRoleLists };
 export type CampInput = z.input<typeof Camp>;
 
 const Config = z.object({
@@ -46,7 +52,7 @@ export type AppConfig = z.infer<typeof Config>;
 const Stored = z.object({ camps: z.array(Camp).default([]) });
 
 const configFile = () => process.env.CAMPS_CONFIG ?? path.join(/* turbopackIgnore: true */ process.cwd(), "config", "camps.json");
-const dataFile = () => path.join(process.env.DATA_DIR ?? path.join(/* turbopackIgnore: true */ process.cwd(), "data"), "camps.json");
+const dataFile = () => dataPath("camps.json");
 
 let cache: { at: number; value: AppConfig } | null = null;
 
@@ -64,7 +70,11 @@ export async function getConfig(): Promise<AppConfig> {
   const base = Config.parse(JSON.parse(raw));
   const stored = await readStored();
   const known = new Set(base.camps.map((c) => c.slug));
-  const value = { ...base, camps: [...base.camps, ...stored.camps.filter((c) => !known.has(c.slug))] };
+  const roles = await readRoleStore();
+  const camps = [...base.camps, ...stored.camps.filter((c) => !known.has(c.slug))].map((c) => ({
+    ...c, ...mergeRoles(c, roles[c.slug]), fixedRoles: mergeRoles(c),
+  }));
+  const value = { ...base, camps };
   cache = { at: Date.now(), value };
   return value;
 }
@@ -80,10 +90,12 @@ export async function addCamp(input: CampInput): Promise<CampConfig> {
   if (await getCamp(camp.slug)) throw new Error(`Es gibt schon ein Lager mit dem Kurznamen «${camp.slug}».`);
   const stored = await readStored();
   stored.camps.push(camp);
-  const file = dataFile();
-  await mkdir(path.dirname(file), { recursive: true });
-  await writeFile(`${file}.tmp`, JSON.stringify(stored, null, 2) + "\n", "utf8");
-  await rename(`${file}.tmp`, file);
+  await writeJson(dataFile(), stored);
   cache = null;
   return camp;
+}
+
+/** After the app changed roles: the next getConfig reads the files again. */
+export function forgetConfig() {
+  cache = null;
 }

@@ -12,3 +12,18 @@ test("getConfig: a camps.json without roles still loads, with nobody in a role",
   const { getConfig } = await import("./config.ts");
   assert.deepEqual((await getConfig()).roles, { al: [], coach: [] });
 });
+
+test("getConfig: roles from roles.json are added to the camp, camps.json ones stay fixed", async () => {
+  const dir = mkdtempSync(path.join(tmpdir(), "cfg-"));
+  const camp = { slug: "sola", name: "Sola", drive: { rootFolderId: "r" }, hauptleitung: ["fix@pfadis.ch"] };
+  writeFileSync(path.join(dir, "camps.json"), JSON.stringify({ camps: [camp] }));
+  writeFileSync(path.join(dir, "roles.json"), JSON.stringify({ sola: { hauptleitung: ["App@pfadis.ch"], kueche: ["k@pfadis.ch"] } }));
+  process.env.CAMPS_CONFIG = path.join(dir, "camps.json");
+  process.env.DATA_DIR = dir;
+  const { forgetConfig, getCamp } = await import("./config.ts");
+  forgetConfig();
+  const sola = await getCamp("sola");
+  assert.deepEqual(sola?.hauptleitung, ["fix@pfadis.ch", "app@pfadis.ch"]);
+  assert.deepEqual(sola?.kueche, ["k@pfadis.ch"]);
+  assert.deepEqual(sola?.fixedRoles, { hauptleitung: ["fix@pfadis.ch"], kueche: [] });
+});
