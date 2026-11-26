@@ -1,15 +1,17 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Calendar, Coins, Folder, Grid, Home, Pot, Users } from "./icons";
+import { Calendar, Check, Coins, Folder, Grid, Home, Pot, Users } from "./icons";
 
-export function Nav({ slug }: { slug: string }) {
+/** `coach`: show the Coach page (AL and Coach only, see canReview) */
+export function Nav({ slug, coach = false }: { slug: string; coach?: boolean }) {
   const path = usePathname();
   const items = [
     { href: `/${slug}`, label: "Übersicht", short: "Übersicht", icon: Home, exact: true },
     { href: `/${slug}/termine`, label: "Termine", short: "Termine", icon: Calendar },
     { href: `/${slug}/personen`, label: "Teilnehmende & Leitende", short: "Personen", icon: Users },
     { href: `/${slug}/programm`, label: "Programm (eCamp)", short: "Programm", icon: Grid },
+    ...(coach ? [{ href: `/${slug}/coach`, label: "Coach-Durchsicht", short: "Coach", icon: Check }] : []),
     { href: `/${slug}/menue`, label: "Menüplan", short: "Menü", icon: Pot },
     { href: `/${slug}/budget`, label: "Budget & Abrechnung", short: "Budget", icon: Coins },
     { href: `/${slug}/ablage`, label: "Ablage", short: "Ablage", icon: Folder },

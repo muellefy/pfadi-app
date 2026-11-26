@@ -13,7 +13,7 @@ const BASE = (process.env.ECAMP_URL ?? "https://app.ecamp3.ch").replace(/\/$/, "
 // eCamp sits behind Cloudflare, which blocks Node's default user agent with a 403.
 const USER_AGENT = "pfadi-app (+https://github.com/muellefy/pfadi-app)";
 
-type Hal = Record<string, any> & { _links?: Record<string, { href: string }>; _embedded?: Record<string, any> };
+export type Hal = Record<string, any> & { _links?: Record<string, { href: string }>; _embedded?: Record<string, any> };
 
 let session: { cookie: string; until: number } | null = null;
 let loggingIn: Promise<void> | null = null;
@@ -41,7 +41,7 @@ function ensureSession() {
   return loggingIn;
 }
 
-async function get(pathOrHref: string, retry = true): Promise<Hal> {
+export async function get(pathOrHref: string, retry = true): Promise<Hal> {
   await ensureSession();
   const url = pathOrHref.startsWith("http") ? pathOrHref : `${BASE}${pathOrHref}`;
   const res = await fetch(url, {
@@ -53,13 +53,17 @@ async function get(pathOrHref: string, retry = true): Promise<Hal> {
   return res.json();
 }
 
-const items = (h: Hal): Hal[] => h._embedded?.items ?? [];
-const href = (h: Hal, rel: string) => h._links?.[rel]?.href;
+export const items = (h: Hal): Hal[] => h._embedded?.items ?? [];
+export const href = (h: Hal, rel: string) => h._links?.[rel]?.href;
 
 export type EcampEntry = {
   id: string; start: string; end: string; number?: string;
   title: string; location: string; category: string; categoryShort: string; color: string;
   progress?: string; url: string;
+  /** the activity's root content node, the key of its content (see ecampBlocks.ts) */
+  root?: string;
+  /** J+S movement time ("Bewegungszeit") of this entry */
+  movementMin?: number;
 };
 export type EcampProgram = {
   title: string; motto?: string; url: string;
@@ -115,6 +119,8 @@ async function fetchProgram(campId: string): Promise<EcampProgram> {
       color: cat.color ?? "#94a3b8",
       progress: labelByHref.get(href(act, "progressLabel")),
       url: `${BASE}/camps/${campId}/program/activities/${id}`,
+      root: href(act, "rootContentNode"),
+      movementMin: e.ysPhysicalActivityDurationMinutes ?? undefined,
     };
   });
   entries.sort((a, b) => a.start.localeCompare(b.start));

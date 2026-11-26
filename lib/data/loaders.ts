@@ -10,6 +10,8 @@ import { ecampConfigured, getProgram, type EcampProgram } from "./ecamp";
 import { parseBudget, type Budget } from "../budget";
 import { MENU_FILE, parseMenu, type MenuPlan } from "../menu";
 import { parseRecipes, RECIPES_SHEET, type Ingredient } from "../shopping";
+import type { BlockContent } from "../coach";
+import { getBlockContent } from "./ecampBlocks";
 
 /** Every loader returns either data or a readable error, so one broken file never takes a whole page down. */
 export type Result<T> = { ok: true; data: T; source?: DriveItem } | { ok: false; error: string };
@@ -104,5 +106,23 @@ export const loadMenu = cache((camp: CampConfig) =>
     // shortcut: downloads the file twice on a cold cache, one grid per sheet; fine for a small xlsx
     const [menu, recipes] = await Promise.all([gridOf(source), gridOf(source, RECIPES_SHEET)]);
     return { data: { plan: parseMenu(menu), recipes: parseRecipes(recipes), folder: item.isFolder ? item : undefined }, source };
+  }),
+);
+
+export type CoachData = { program: EcampProgram; content: Record<string, BlockContent>; dossier?: DriveItem };
+
+/** The Coach review: the eCamp program with each block's content, and the Lagerdossier from Drive. */
+export const loadCoach = cache((camp: CampConfig) =>
+  attempt<CoachData | null>(async () => {
+    if (!camp.ecampCampId || !ecampConfigured()) return { data: null };
+    const [program, content, dossier] = await Promise.all([
+      getProgram(camp.ecampCampId),
+      getBlockContent(camp.ecampCampId),
+      // the dossier is a nice-to-have: a Drive error must not hide the program
+      listChildren(camp.drive.rootFolderId)
+        .then((files) => files.filter((f) => !f.isFolder && /dossier/i.test(f.name)).sort((a, b) => (b.modifiedTime ?? "").localeCompare(a.modifiedTime ?? ""))[0])
+        .catch(() => undefined),
+    ]);
+    return { data: { program, content, dossier } };
   }),
 );
