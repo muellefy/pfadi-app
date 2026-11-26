@@ -1,6 +1,7 @@
 {
   "organisation": "Pfadi Rhenania",
   "templateFolderId": "ID_DES_VORLAGE_ORDNERS",
+  "roles": { "al": ["al@pfadis.ch"], "coach": ["coach@pfadis.ch"] },
   "camps": [
     {
       "slug": "sola-27",

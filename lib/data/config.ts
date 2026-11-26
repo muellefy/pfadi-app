@@ -37,6 +37,8 @@ const Config = z.object({
   /** Drive folder copied for a new camp ("Neues Lager"); can be changed in the form */
   templateFolderId: z.string().optional(),
   camps: z.array(Camp).default([]),
+  /** emails of the Abteilungsleitung and J+S Coaches (see lib/roles.ts) */
+  roles: z.object({ al: z.array(z.string()).default([]), coach: z.array(z.string()).default([]) }).default({ al: [], coach: [] }),
 });
 export type AppConfig = z.infer<typeof Config>;
 
