@@ -12,7 +12,7 @@ export default async function CampLayout({ children, params }: { children: React
   const { camp: slug } = await params;
   const [config, camp, session] = await Promise.all([getConfig(), getCamp(slug), auth()]);
   if (!camp) notFound();
-  const roles = rolesOf(session?.user?.email, config.roles);
+  const roles = rolesOf(session?.user?.email, config.roles, camp);
 
   return (
     <div className="shell">
@@ -31,6 +31,7 @@ export default async function CampLayout({ children, params }: { children: React
             {session?.user?.name ?? session?.user?.email}
             {roles.al && <span className="pill" style={{ marginLeft: 6 }}>AL</span>}
             {roles.coach && <span className="pill" style={{ marginLeft: 6 }}>Coach</span>}
+            {roles.hauptleitung && <span className="pill" style={{ marginLeft: 6 }}>Hauptleitung</span>}
           </span>
           <form action={async () => { "use server"; await signOut({ redirectTo: "/login" }); }}>
             <button className="btn ghost small" style={{ paddingLeft: 0 }}>Abmelden</button>

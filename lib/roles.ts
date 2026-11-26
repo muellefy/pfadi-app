@@ -1,17 +1,21 @@
-/** Who is AL or J+S Coach, from the email lists in camps.json. Roles never widen Drive access. */
+/**
+ * Who is AL or J+S Coach (whole Abteilung, top-level lists in camps.json) and who is
+ * Hauptleitung of a camp (that camp's own list). Roles never widen Drive access.
+ */
 export type RoleLists = { al: string[]; coach: string[] };
-export type Roles = { al: boolean; coach: boolean };
+export type Roles = { al: boolean; coach: boolean; hauptleitung: boolean };
 
 const norm = (s: string) => s.trim().toLowerCase();
 
-export function rolesOf(email: string | null | undefined, lists: RoleLists): Roles {
-  if (!email) return { al: false, coach: false };
+export function rolesOf(email: string | null | undefined, lists: RoleLists, camp?: { hauptleitung: string[] }): Roles {
+  if (!email) return { al: false, coach: false, hauptleitung: false };
   const me = norm(email);
-  return { al: lists.al.some((e) => norm(e) === me), coach: lists.coach.some((e) => norm(e) === me) };
+  const has = (list: string[]) => list.some((e) => norm(e) === me);
+  return { al: has(lists.al), coach: has(lists.coach), hauptleitung: has(camp?.hauptleitung ?? []) };
 }
 
 /**
  * Who may open the Coach page. It shows eCamp block contents (notes, safety texts) that
  * come through the shared eCamp account, not the person's own access, so it stays narrow.
  */
-export const canReview = (r: Roles) => r.al || r.coach;
+export const canReview = (r: Roles) => r.al || r.coach || r.hauptleitung;

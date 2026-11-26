@@ -28,6 +28,7 @@ const Camp = z.object({
   }),
   ecampCampId: z.string().optional(), // id from the eCamp URL: app.ecamp3.ch/camps/<id>/...
   writeBack: z.boolean().default(false),
+  hauptleitung: z.array(z.string()).default([]), // emails: may open the Coach page of this camp
 });
 export type CampConfig = z.infer<typeof Camp>;
 export type CampInput = z.input<typeof Camp>;
