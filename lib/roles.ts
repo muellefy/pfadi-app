@@ -3,15 +3,15 @@
  * Hauptleitung of a camp (that camp's own list). Roles never widen Drive access.
  */
 export type RoleLists = { al: string[]; coach: string[] };
-export type Roles = { al: boolean; coach: boolean; hauptleitung: boolean };
+export type Roles = { al: boolean; coach: boolean; hauptleitung: boolean; kueche: boolean };
 
 const norm = (s: string) => s.trim().toLowerCase();
 
-export function rolesOf(email: string | null | undefined, lists: RoleLists, camp?: { hauptleitung: string[] }): Roles {
-  if (!email) return { al: false, coach: false, hauptleitung: false };
+export function rolesOf(email: string | null | undefined, lists: RoleLists, camp?: { hauptleitung: string[]; kueche: string[] }): Roles {
+  if (!email) return { al: false, coach: false, hauptleitung: false, kueche: false };
   const me = norm(email);
   const has = (list: string[]) => list.some((e) => norm(e) === me);
-  return { al: has(lists.al), coach: has(lists.coach), hauptleitung: has(camp?.hauptleitung ?? []) };
+  return { al: has(lists.al), coach: has(lists.coach), hauptleitung: has(camp?.hauptleitung ?? []), kueche: has(camp?.kueche ?? []) };
 }
 
 /**
@@ -19,3 +19,6 @@ export function rolesOf(email: string | null | undefined, lists: RoleLists, camp
  * come through the shared eCamp account, not the person's own access, so it stays narrow.
  */
 export const canReview = (r: Roles) => r.al || r.coach || r.hauptleitung;
+
+/** Who may assign the roles of a camp: its Hauptleitung (the camp's admin) and the AL. */
+export const canManageRoles = (r: Roles) => r.al || r.hauptleitung;

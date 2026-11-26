@@ -2,10 +2,11 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
-import { addCamp, getCamp, getConfig, RESERVED_SLUGS } from "@/lib/data/config";
+import { addCamp, forgetConfig, getCamp, getConfig, RESERVED_SLUGS } from "@/lib/data/config";
 import { CURRENT_COOKIE, detectFiles, driveId, ecampId, slugify } from "@/lib/camps";
 import { serialize } from "@/lib/lock";
 import { copyTemplate } from "@/lib/data/template";
+import { writeCampRoles } from "@/lib/data/campRolesStore";
 
 const YEAR = 365 * 86_400;
 
@@ -60,9 +61,12 @@ export async function createCamp(_prev: CreateState, form: FormData): Promise<Cr
         drive: { rootFolderId: copy.root.id, ...detectFiles(copy.entries) },
         ecampCampId: ecamp ?? undefined,
         writeBack: true,
-        // whoever creates the camp leads it; more names can be added in camps.json
-        hauptleitung: creator ? [creator] : [],
       });
+      // whoever creates the camp leads it (and can hand the role on in the app)
+      if (creator) {
+        await serialize("roles", () => writeCampRoles(slug, { hauptleitung: [creator.toLowerCase()], kueche: [] }));
+        forgetConfig();
+      }
     });
   } catch (e) {
     return fail(e instanceof Error ? e.message : "Das Lager konnte nicht angelegt werden.");
