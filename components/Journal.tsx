@@ -2,20 +2,12 @@
 import { useMemo, useState, type FormEvent } from "react";
 import type { Booking, Budget } from "@/lib/budget";
 import { money } from "@/lib/money";
-import { receiptName } from "@/lib/receipt";
+import { receiptName, uploadReceipt } from "@/lib/receipt";
 import { deleteBooking, saveBooking, type Result } from "@/app/[camp]/budget/actions";
 
 const DATE = new Intl.DateTimeFormat("de-CH", { day: "2-digit", month: "2-digit", year: "numeric", timeZone: "UTC" });
 /** "Ausgaben - Höcks" → "Höcks" for display; the sheet keeps the full name */
 const shortCat = (c: string) => c.replace(/^(ausgaben|einnahmen)\s*-\s*/i, "");
-
-/** Uploads the receipt into the budget folder (same route as the Ablage); returns an error text or null. */
-async function uploadReceipt(folderId: string, name: string, file: File): Promise<string | null> {
-  const res = await fetch(`/api/drive/upload?folder=${encodeURIComponent(folderId)}`, {
-    method: "POST", body: file, headers: { "x-file-name": encodeURIComponent(name), "content-type": file.type || "application/octet-stream" },
-  });
-  return res.ok ? null : `Beleg nicht hochgeladen: ${await res.text()}`;
-}
 
 type JournalProps = {
   slug: string; budget: Budget; editable: boolean; pending: boolean;
