@@ -7,6 +7,8 @@ export type InviteContext = {
   al: string[]; coach: string[]; hauptleitung: string[]; kueche: string[]; leiter: string[];
   /** Leiter list rows: the names someone goes by, and their address (may be empty) */
   people: { names: string[]; email: string }[];
+  /** ALLOWED_DOMAIN: addresses typed into «Wer» must be from here or already known to the app */
+  domain: string;
 };
 
 const norm = (s: string) => s.trim().toLowerCase();
@@ -22,13 +24,20 @@ function roleEmails(word: string, c: InviteContext): string[] | undefined {
   }
 }
 
+/**
+ * Anyone who can edit the sheet can write into «Wer», but the invitations go out from the
+ * Hauptleitung's account: so a typed address only counts if it's from the Abteilung's domain
+ * or already in the roles or the Leiter list. Others come back as unknown.
+ */
 export function invitees(wer: string, c: InviteContext): { emails: string[]; unknown: string[] } {
+  const known = new Set([...c.al, ...c.coach, ...c.hauptleitung, ...c.kueche, ...c.leiter, ...c.people.map((p) => p.email)].map(norm));
+  const allowed = (e: string) => known.has(e) || e.endsWith(`@${c.domain.toLowerCase()}`);
   const emails: string[] = [];
   const unknown: string[] = [];
   for (const part of wer.split(/\s*(?:[,;/&\n]|\s\+\s|\bund\b)\s*/i)) {
     const word = norm(part);
     if (!word) continue;
-    const found = EMAIL.test(word) ? [word]
+    const found = EMAIL.test(word) ? (allowed(word) ? [word] : [])
       : roleEmails(word, c) ?? c.people.filter((p) => p.email && p.names.some((n) => norm(n) === word)).map((p) => p.email);
     if (found.length) emails.push(...found.map(norm));
     else unknown.push(part.trim());

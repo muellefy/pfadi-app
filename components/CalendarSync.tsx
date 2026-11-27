@@ -29,7 +29,7 @@ export function CalendarSync({ action, label, children, last }: Props) {
       {result?.ok && (
         <div className="notice" style={{ marginTop: 10 }}>
           {result.sent === 0 && result.removed === 0 ? "Alles war schon aktuell." : `${result.sent} eingetragen oder geändert, ${result.removed} entfernt.`}
-          {result.undated > 0 && ` ${result.undated} ohne Datum ausgelassen.`}
+          {result.undated > 0 && ` ${result.undated} ohne Datum, die bleiben, wie sie sind.`}
           {result.unknown.length > 0 && <> Ohne E-Mail-Adresse (nicht eingeladen): {result.unknown.join(", ")}. Trage sie in der Leiterliste mit E-Mail ein oder unter «Rollen im Lager».</>}
         </div>
       )}

@@ -5,7 +5,8 @@ import { invitees } from "./invitees.ts";
 const ctx = {
   al: ["al@pfadis.ch"], coach: ["coach@pfadis.ch"],
   hauptleitung: ["hl@pfadis.ch"], kueche: ["koch@pfadis.ch"], leiter: ["fuchs@pfadis.ch", "luchs@pfadis.ch"],
-  people: [{ names: ["Fuchs", "Anna Muster"], email: "Fuchs@pfadis.ch" }, { names: ["Luchs"], email: "" }],
+  people: [{ names: ["Fuchs", "Anna Muster"], email: "Fuchs@pfadis.ch" }, { names: ["Luchs"], email: "" }, { names: ["Biber"], email: "biber@gmail.com" }],
+  domain: "pfadis.ch",
 };
 
 test("invitees: role words become the role's addresses", () => {
@@ -25,11 +26,15 @@ test("invitees: names from the Leiter list, addresses as written", () => {
 });
 
 test("invitees: names without an address and unknown words are reported", () => {
-  assert.deepEqual(invitees("Luchs + Biber", ctx), { emails: [], unknown: ["Luchs", "Biber"] });
+  assert.deepEqual(invitees("Luchs + Wolf", ctx), { emails: [], unknown: ["Luchs", "Wolf"] });
   assert.deepEqual(invitees("", ctx), { emails: [], unknown: [] });
 });
 
 test("invitees: «J+S-Coach» stays one word", () => {
   assert.deepEqual(invitees("J+S-Coach", ctx).emails, ["coach@pfadis.ch"]);
   assert.deepEqual(invitees("J+S Coach", ctx).emails, ["coach@pfadis.ch"]);
+});
+
+test("invitees: a typed address from outside the Abteilung only counts if the app knows it", () => {
+  assert.deepEqual(invitees("x@evil.com, biber@gmail.com, neu@pfadis.ch", ctx), { emails: ["biber@gmail.com", "neu@pfadis.ch"], unknown: ["x@evil.com"] });
 });
