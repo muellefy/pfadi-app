@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getMyCamp } from "@/lib/data/myRoles";
-import { loadMenu, loadPeople, loadProgram, loadTermine } from "@/lib/data/loaders";
+import { loadAemtli, loadMenu, loadPeople, loadProgram, loadTermine } from "@/lib/data/loaders";
 import { campDates } from "@/lib/campDates";
 import { campDay, entriesOn, shiftDay, zurichDay } from "@/lib/today";
 import { dietHints } from "@/lib/diet";
@@ -24,8 +24,8 @@ export default async function HeutePage({ params, searchParams }: {
   const [{ camp: slug }, q] = await Promise.all([params, searchParams]);
   const camp = await getMyCamp(slug);
   if (!camp) notFound();
-  const [program, termine, menu, tn, leiter] = await Promise.all([
-    loadProgram(camp), loadTermine(camp), loadMenu(camp), loadPeople(camp, "tn"), loadPeople(camp, "leiter"),
+  const [program, termine, menu, tn, leiter, aemtli] = await Promise.all([
+    loadProgram(camp), loadTermine(camp), loadMenu(camp), loadPeople(camp, "tn"), loadPeople(camp, "leiter"), loadAemtli(camp),
   ]);
   const prog = program.ok ? program.data : null;
   const { start, end } = campDates(camp, prog, termine.ok ? termine.data : undefined);
@@ -36,6 +36,8 @@ export default async function HeutePage({ params, searchParams }: {
   const meals = plan?.days.find((d) => d.date === day);
   const people = [...(tn.ok ? dietHints(tn.data, "TN") : []), ...(leiter.ok ? dietHints(leiter.data, "Leitende") : [])];
   const warnings = plan && meals ? mealWarnings({ ...plan, days: [meals] }, menu.ok ? menu.data.recipes : [], people) : [];
+  const chores = aemtli.ok ? aemtli.data.plan : null;
+  const choresToday = chores?.days.find((d) => d.date === day);
   const due = termine.ok ? termine.data.termine.filter((t) => !t.erledigt && t.date && t.date <= day).slice(0, 10) : [];
 
   return (
@@ -94,6 +96,19 @@ export default async function HeutePage({ params, searchParams }: {
           )}
         </section>
       </div>
+
+      <section className="card" style={{ marginTop: 20 }}>
+        <div className="card-head"><h2>Ämtli</h2><Link href={`/${slug}/aemtli`}>Ämtliplan</Link></div>
+        {!aemtli.ok ? <ErrorNotice error={aemtli.error} /> : !choresToday ? (
+          <p className="muted" style={{ margin: 0 }}>{chores ? "Für diesen Tag steht nichts im Ämtliplan." : "Noch kein Ämtliplan."}</p>
+        ) : (
+          <ul className="termine">
+            {chores!.chores.map((c, i) => (
+              <li key={c} className="termin"><div className="date">{choresToday.groups[i] || "–"}</div><div className="what">{c}</div></li>
+            ))}
+          </ul>
+        )}
+      </section>
 
       <section className="card" style={{ marginTop: 20 }}>
         <div className="card-head"><h2>Fällig bis heute</h2><Link href={`/${slug}/termine`}>Alle Termine</Link></div>
