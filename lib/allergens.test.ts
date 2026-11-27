@@ -52,3 +52,8 @@ test("mealWarnings: names each affected meal with who and why, from the meal tex
 test("mealWarnings: nobody with notes, no warnings", () => {
   assert.deepEqual(mealWarnings(plan, recipes, []), []);
 });
+
+test("clashes: an egg allergy, though «Ei» is a short word", () => {
+  assert.deepEqual(clashes("Allergie: Ei", "Rösti mit Spiegelei"), ["Eier"]);
+  assert.deepEqual(clashes("Allergie: Ei", "Gemüsereis"), []);
+});
