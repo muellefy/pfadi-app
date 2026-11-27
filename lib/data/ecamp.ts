@@ -64,6 +64,8 @@ export type EcampEntry = {
   root?: string;
   /** J+S movement time ("Bewegungszeit") of this entry */
   movementMin?: number;
+  /** who leads the activity (eCamp "Verantwortliche"), by eCamp name */
+  responsibles?: string[];
 };
 export type EcampProgram = {
   title: string; motto?: string; url: string;
@@ -86,18 +88,26 @@ export const getProgram = (campId: string) =>
 async function fetchProgram(campId: string): Promise<EcampProgram> {
   const campHref = `/api/camps/${campId}`;
   const q = encodeURIComponent(campHref);
-  const [camp, periods, categories, activities, collabs, labels] = await Promise.all([
+  const [camp, periods, categories, activities, collabs, labels, responsibles] = await Promise.all([
     get(campHref),
     get(`/api/periods?camp=${q}`),
     get(`/api/categories?camp=${q}`),
     get(`/api/activities?camp=${q}`),
     get(`/api/camp_collaborations?camp=${q}`),
     get(`/api/camps/${campId}/activity_progress_labels`).catch(() => ({}) as Hal),
+    get(`/api/activity_responsibles?${new URLSearchParams({ "activity.camp": campHref })}`).catch(() => ({}) as Hal),
   ]);
 
   const catByHref = new Map(items(categories).map((c) => [href(c, "self"), c]));
   const actByHref = new Map(items(activities).map((a) => [href(a, "self"), a]));
   const labelByHref = new Map(items(labels).map((l) => [href(l, "self"), l.title as string]));
+  const collabName = new Map(items(collabs).map((c) => [href(c, "self"), (c._embedded?.user?.displayName ?? c.inviteEmail ?? "") as string]));
+  const leadersOf = new Map<string, string[]>();
+  for (const r of items(responsibles)) {
+    const name = collabName.get(href(r, "campCollaboration"));
+    const act = href(r, "activity");
+    if (name && act) leadersOf.set(act, [...(leadersOf.get(act) ?? []), name]);
+  }
 
   const entryLists = await Promise.all(
     items(periods).map((p) => get(`/api/schedule_entries?period=${encodeURIComponent(href(p, "self")!)}`)),
@@ -121,6 +131,7 @@ async function fetchProgram(campId: string): Promise<EcampProgram> {
       url: `${BASE}/camps/${campId}/program/activities/${id}`,
       root: href(act, "rootContentNode"),
       movementMin: e.ysPhysicalActivityDurationMinutes ?? undefined,
+      responsibles: leadersOf.get(href(act, "self") ?? href(e, "activity")),
     };
   });
   entries.sort((a, b) => a.start.localeCompare(b.start));
