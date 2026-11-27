@@ -15,6 +15,7 @@ export const ALLERGENS = [
   { label: "laktosefrei", note: /laktose|lactose|milch/i, food: DAIRY },
   { label: "glutenfrei", note: /gluten|zöliak|zoeliak|celiac/i, food: /mehl|brot|zopf|teigwaren|pasta|spaghetti|hörnli|magronen|penne|nudel|lasagne|couscous|weizen|dinkel|gerste|paniert|wähe|kuchen|guetzli/i },
   { label: "Nüsse", note: /nuss|nüsse|nuesse/i, food: /nuss|nüsse|mandel|pesto|cashew|pistazie|nutella|marzipan/i },
+  { label: "Eier", note: /\bei(er)?\b|eiallerg|ei-allerg/i, food: /eier|\bei\b|spiegelei|rührei|omelett|mayo/i },
   { label: "kein Schwein", note: /schwein|pork/i, food: /schwein|speck|schinken|cervelat|salami|wienerli|bratwurst|landjäger/i },
 ] as const;
 

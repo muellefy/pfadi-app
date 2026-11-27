@@ -52,9 +52,16 @@ async function upsert(token: string, id: string, body: CalendarEvent) {
   }
 }
 
-/** Runs `fn` over `list`, a few at a time (Google limits requests per second). */
-async function inBatches<T>(list: T[], fn: (x: T) => Promise<unknown>, size = 5) {
-  for (let i = 0; i < list.length; i += size) await Promise.all(list.slice(i, i + size).map(fn));
+/**
+ * Runs `fn` over `list`, a few at a time (Google limits requests per second). Every request of a
+ * batch finishes before the next batch or the error, so nothing still runs after we saved.
+ */
+async function inBatches<T>(list: T[], fn: (x: T) => Promise<void>, size = 5) {
+  for (let i = 0; i < list.length; i += size) {
+    const results = await Promise.allSettled(list.slice(i, i + size).map(fn));
+    const failed = results.find((r) => r.status === "rejected");
+    if (failed) throw failed.reason;
+  }
 }
 
 export type Wanted = { id: string; hash: string; body: CalendarEvent };
@@ -75,13 +82,19 @@ export async function syncCalendar(scope: string, wanted: Wanted[], keep: string
     const stored = before?.events ?? {};
     const { send, remove } = planSync(stored, wanted, keep);
     const events = { ...stored };
-    // save what got through even if a later request fails, so a retry doesn't invite twice
-    const save = () => writeJson(FILE(), { ...store, [scope]: { organizer: me, syncedAt: new Date().toISOString(), events } });
+    let done = 0;
     try {
-      await inBatches(send, async (w) => { await upsert(token, w.id, w.body); events[w.id] = w.hash; });
-      await inBatches(remove, async (id) => { await call(token, "DELETE", `${API}/${id}?sendUpdates=all`); delete events[id]; });
+      await inBatches(send, async (w) => { await upsert(token, w.id, w.body); events[w.id] = w.hash; done++; });
+      await inBatches(remove, async (id) => { await call(token, "DELETE", `${API}/${id}?sendUpdates=all`); delete events[id]; done++; });
     } finally {
-      await save();
+      // save what got through even if a later request failed, so a retry doesn't invite twice;
+      // nobody becomes the organizer of a camp without having sent anything
+      if (done > 0) {
+        const rest = { ...store };
+        if (Object.keys(events).length) rest[scope] = { organizer: me, syncedAt: new Date().toISOString(), events };
+        else delete rest[scope];
+        await writeJson(FILE(), rest);
+      }
     }
     return { sent: send.length, removed: remove.length };
   });

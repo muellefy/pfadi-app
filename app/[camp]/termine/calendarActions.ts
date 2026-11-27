@@ -25,7 +25,12 @@ export async function syncTermineCalendar(slug: string): Promise<CalendarResult>
   }
   const [termine, leiter] = await Promise.all([loadTermine(camp), loadPeople(camp, "leiter")]);
   if (!termine.ok) return { ok: false, error: termine.error };
-  const ctx = { ...config.roles, hauptleitung: camp.hauptleitung, kueche: camp.kueche, leiter: camp.leiter, people: leiter.ok ? contactsOf(leiter.data) : [] };
+  // without the list, everyone named in it would drop off the events and get a cancellation
+  if (camp.drive.leiterFileId && !leiter.ok) return { ok: false, error: `Die Leiterliste lässt sich gerade nicht laden (${leiter.error}). Bitte später nochmals versuchen.` };
+  const ctx = {
+    ...config.roles, hauptleitung: camp.hauptleitung, kueche: camp.kueche, leiter: camp.leiter,
+    people: leiter.ok ? contactsOf(leiter.data) : [], domain: process.env.ALLOWED_DOMAIN ?? "pfadis.ch",
+  };
   const link = `${process.env.AUTH_URL ?? ""}/${camp.slug}/termine`;
 
   const seen = new Map<string, number>();
@@ -39,8 +44,9 @@ export async function syncTermineCalendar(slug: string): Promise<CalendarResult>
     const n = (seen.get(base) ?? 0) + 1;
     seen.set(base, n);
     const id = eventId(camp.slug, `${base}|${n}`);
+    // ticked off, or no date right now (e.g. "7 Wochen vorher" while eCamp is down): leave the event as it is
     if (t.erledigt) { keep.push(id); continue; }
-    if (!t.date) { undated++; continue; }
+    if (!t.date) { keep.push(id); undated++; continue; }
     const who = invitees(t.wer, ctx);
     who.unknown.forEach((u) => unknown.add(u));
     const body = terminEvent({ camp: camp.name, was: t.was, date: t.date, wer: t.wer, anWen: t.anWen, link }, who.emails);
