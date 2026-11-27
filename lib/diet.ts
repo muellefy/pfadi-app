@@ -1,15 +1,8 @@
 import "server-only";
 import type { PersonTable } from "./people";
+import { ALLERGENS } from "./allergens.ts";
 
 const NO_HINT = /^(-|keine?|nein|no|none|n\/a|0)$/i;
-const DIET = [
-  ["vegetarisch", /vegetar|vegi\b|veggie|kein fleisch/i],
-  ["vegan", /vegan/i],
-  ["laktosefrei", /laktose|lactose|milch/i],
-  ["glutenfrei", /gluten|zöliak|zoeliak|celiac/i],
-  ["Nüsse", /nuss|nüsse|nuesse|erdnuss/i],
-  ["kein Schwein", /schwein|pork/i],
-] as const;
 
 export type DietPerson = { name: string; list: string; hints: string[] };
 
@@ -26,5 +19,5 @@ export function dietHints(table: PersonTable, list: string): DietPerson[] {
 
 /** How many people need each common diet, counted from their hints. */
 export function dietCounts(people: DietPerson[]) {
-  return DIET.map(([label, re]) => ({ label, count: people.filter((p) => p.hints.some((h) => re.test(h))).length })).filter((d) => d.count);
+  return ALLERGENS.map(({ label, note }) => ({ label, count: people.filter((p) => p.hints.some((h) => note.test(h))).length })).filter((d) => d.count);
 }

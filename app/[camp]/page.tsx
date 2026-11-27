@@ -9,6 +9,7 @@ import { ErrorNotice } from "@/components/ErrorNotice";
 import { StatusPill } from "@/components/StatusPill";
 import { daysUntil, relative, weekday } from "@/lib/dates";
 import { Avatar } from "@/components/Avatar";
+import { shiftDay, zurichDay } from "@/lib/today";
 
 const TODAY = new Intl.DateTimeFormat("de-CH", { weekday: "short", day: "numeric", month: "short", timeZone: "Europe/Zurich" });
 const fmt = (iso?: string) =>
@@ -28,6 +29,7 @@ export default async function Dashboard({ params }: { params: Promise<{ camp: st
 
   return (
     <>
+      <Suspense fallback={null}><TodayLink camp={camp} /></Suspense>
       <Suspense fallback={<section className="hero"><div className="camp"><div className="eyebrow">{camp.kind}</div><h1>{camp.name}</h1></div></section>}>
         <Hero camp={camp} />
       </Suspense>
@@ -42,6 +44,19 @@ export default async function Dashboard({ params }: { params: Promise<{ camp: st
         <Ressorts camp={camp} />
       </Suspense>
     </>
+  );
+}
+
+/** From the day before the camp to its last day: a big way into the Heute view (it isn't in the tab bar). */
+async function TodayLink({ camp }: { camp: CampConfig }) {
+  const [termine, program] = await Promise.all([loadTermine(camp), loadProgram(camp)]);
+  const { start, end } = campDates(camp, program.ok ? program.data : null, termine.ok ? termine.data : undefined);
+  const today = zurichDay(new Date());
+  if (!start || today < shiftDay(start, -1) || today > (end ?? start)) return null;
+  return (
+    <Link href={`/${camp.slug}/heute`} className="card today-link">
+      <b>Heute im Lager</b><span className="muted">Programm, Essen und was fällig ist →</span>
+    </Link>
   );
 }
 
