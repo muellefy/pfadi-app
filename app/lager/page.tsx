@@ -40,7 +40,10 @@ export default async function LagerPage() {
           <h1>Alle Lager</h1>
           <p>Wähle das Lager, an dem du gerade arbeitest – die App öffnet beim nächsten Mal direkt dieses.</p>
         </div>
-        <Link href="/lager/neu" className="btn primary">Neues Lager anlegen</Link>
+        <div className="toolbar" style={{ marginBottom: 0 }}>
+          <Link href="/lager/jahresplan" className="btn">Jahresplan</Link>
+          <Link href="/lager/neu" className="btn primary">Neues Lager anlegen</Link>
+        </div>
       </header>
       {!sorted.length && <div className="notice">Noch kein Lager – lege das erste an.</div>}
       <div className="grid grid-3">

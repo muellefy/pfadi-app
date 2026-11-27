@@ -17,6 +17,8 @@ const SCOPES = [
   // full drive scope is needed for writing back (e.g. ticking off a Termin).
   // Use drive.readonly if you set "writeBack": false for all camps.
   process.env.GOOGLE_DRIVE_SCOPE ?? "https://www.googleapis.com/auth/drive",
+  // to put Termine into the person's own calendar and invite the people named in «Wer»
+  "https://www.googleapis.com/auth/calendar.events",
 ].join(" ");
 
 declare module "next-auth" {
