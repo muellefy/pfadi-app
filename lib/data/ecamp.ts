@@ -131,7 +131,7 @@ async function fetchProgram(campId: string): Promise<EcampProgram> {
       url: `${BASE}/camps/${campId}/program/activities/${id}`,
       root: href(act, "rootContentNode"),
       movementMin: e.ysPhysicalActivityDurationMinutes ?? undefined,
-      responsibles: leadersOf.get(href(act, "self") ?? href(e, "activity")),
+      responsibles: leadersOf.get(href(act, "self") ?? href(e, "activity") ?? ""),
     };
   });
   entries.sort((a, b) => a.start.localeCompare(b.start));
