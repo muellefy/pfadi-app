@@ -28,19 +28,23 @@ export function parseRecipes(grid: Grid): Ingredient[] {
   });
 }
 
+/** The recipes a meal names: every dish whose name the meal text contains. */
+export function dishesIn(meal: string, recipes: Ingredient[]): string[] {
+  const text = meal.toLowerCase();
+  return [...new Set(recipes.map((r) => r.dish))].filter((d) => text.includes(d.toLowerCase()));
+}
+
 /**
  * Sums the ingredients of every planned meal for `people`. A meal matches each dish whose
  * name it contains, so «Älplermagronen mit Apfelmus» picks up both recipes.
  * shortcut: plain substring match («Reis» also hits «Reissalat»), use exact names if that bites.
  */
 export function shoppingList(plan: MenuPlan, recipes: Ingredient[], people: number) {
-  const dishes = [...new Set(recipes.map((r) => r.dish))];
   const totals = new Map<string, ShoppingItem>();
   const missing = new Set<string>();
   for (const meal of plan.days.flatMap((d) => d.meals)) {
-    const text = meal.text.toLowerCase();
-    if (!text) continue;
-    const hits = dishes.filter((d) => text.includes(d.toLowerCase()));
+    if (!meal.text) continue;
+    const hits = dishesIn(meal.text, recipes);
     if (!hits.length) missing.add(meal.text);
     for (const r of recipes.filter((r) => hits.includes(r.dish))) {
       const key = `${r.item.toLowerCase()}|${r.unit.toLowerCase()}`;

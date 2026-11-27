@@ -4,6 +4,13 @@ import { loadTermine } from "@/lib/data/loaders";
 import { ErrorNotice } from "@/components/ErrorNotice";
 import { Source } from "@/components/Source";
 import { TermineList } from "@/components/TermineList";
+import { CalendarSync } from "@/components/CalendarSync";
+import { myRoles } from "@/lib/data/myRoles";
+import { readCalendarStore } from "@/lib/data/calendar";
+import { canManageRoles } from "@/lib/roles";
+import { syncTermineCalendar } from "./calendarActions";
+
+const WHEN = new Intl.DateTimeFormat("de-CH", { dateStyle: "medium", timeStyle: "short", timeZone: "Europe/Zurich" });
 
 export const metadata = { title: "Termine" };
 
@@ -11,7 +18,8 @@ export default async function TerminePage({ params }: { params: Promise<{ camp: 
   const { camp: slug } = await params;
   const camp = await getMyCamp(slug);
   if (!camp) notFound();
-  const res = await loadTermine(camp);
+  const [res, roles, synced] = await Promise.all([loadTermine(camp), myRoles(camp), readCalendarStore().catch(() => ({}) as Awaited<ReturnType<typeof readCalendarStore>>)]);
+  const last = synced[camp.slug];
 
   const t = res.ok ? res.data.termine : [];
   const done = t.filter((x) => x.erledigt).length;
@@ -38,6 +46,17 @@ export default async function TerminePage({ params }: { params: Promise<{ camp: 
           </div>
         )}
       </header>
+      {res.ok && canManageRoles(roles) && (
+        <CalendarSync
+          action={syncTermineCalendar.bind(null, slug)}
+          label="In Google Kalender eintragen"
+          last={last && `Zuletzt am ${WHEN.format(new Date(last.syncedAt))} von ${last.organizer}`}
+        >
+          Jeder offene Termin mit Datum kommt als ganztägiger Termin in deinen Kalender, und alle in «Wer» Genannten
+          bekommen eine Einladung (Rollen wie Coach, AL, HL, Küche, Alle; Namen aus der Leiterliste; E-Mail-Adressen).
+          Nochmals drücken aktualisiert geänderte Daten und Personen.
+        </CalendarSync>
+      )}
       {res.ok ? (
         <>
           <TermineList slug={slug} termine={t} writeBack={camp.writeBack && !!res.source?.name.endsWith(".xlsx")} />
