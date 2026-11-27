@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import { getMyCamp } from "@/lib/data/myRoles";
 import { loadAemtli, loadPeople, loadProgram, loadTermine } from "@/lib/data/loaders";
 import { campDates } from "@/lib/campDates";
-import { campDays, DEFAULT_CHORES } from "@/lib/aemtli";
+import { campDays, DEFAULT_CHORES, isOwnAemtliFile } from "@/lib/aemtli";
 import { zurichDay } from "@/lib/today";
 import { ErrorNotice } from "@/components/ErrorNotice";
 import { Source } from "@/components/Source";
@@ -53,7 +53,7 @@ export default async function AemtliPage({ params }: { params: Promise<{ camp: s
             chores={plan?.chores.length ? plan.chores : DEFAULT_CHORES}
             groups={groups}
             canSave={camp.writeBack}
-            replaces={Boolean(plan)}
+            replaces={Boolean(plan && res.source && isOwnAemtliFile(res.source.name, camp.name))}
           />
         </>
       )}

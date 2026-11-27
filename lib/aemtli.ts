@@ -6,6 +6,10 @@ import type { Grid } from "./grid.ts";
  * per day, so over the camp each group gets each Ämtli about equally often.
  */
 export const AEMTLI_FILE = /ämtli|aemtli/i;
+/** The file the app writes; only this one is ever overwritten, other «Ämtli…» sheets in the folder are left alone. */
+export const aemtliFileName = (camp: string) => `Ämtliplan ${camp}.xlsx`;
+export const isOwnAemtliFile = (name: string, camp: string) => name.normalize("NFC") === aemtliFileName(camp).normalize("NFC");
+
 export const DEFAULT_CHORES = ["Abwaschen", "Tisch decken & abräumen", "Feuerholz & Wasser", "WC & Waschplatz", "Küchenhilfe"];
 
 /** at most this many Ämtli and groups: a camp has a handful of each */

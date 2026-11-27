@@ -7,7 +7,7 @@ import { loadAemtli, loadProgram, loadTermine } from "@/lib/data/loaders";
 import { getItemFresh, uploadFile, uploadNewRevision, XLSX } from "@/lib/data/drive";
 import { serialize } from "@/lib/lock";
 import { campDates } from "@/lib/campDates";
-import { campDays, MAX_LINES, rotate, splitLines } from "@/lib/aemtli";
+import { aemtliFileName, campDays, isOwnAemtliFile, MAX_LINES, rotate, splitLines } from "@/lib/aemtli";
 import { buildAemtliXlsx } from "@/lib/aemtliXlsx";
 
 export type Result = { ok: true } | { ok: false; error: string };
@@ -32,13 +32,15 @@ export async function saveAemtli(slug: string, choresText: string, groupsText: s
       const days = campDays(start, end);
       if (!days.length) return { ok: false, error: "Lagerbeginn und -ende fehlen (in eCamp oder in der Konfiguration)." };
       const xlsx = await buildAemtliXlsx(`Ämtliplan ${camp.name}`, { chores, days: rotate(days, chores, groups) });
-      const existing = current.source && current.source.mimeType === XLSX ? await getItemFresh(current.source.id) : undefined;
+      // overwrite only the app's own file, never someone's «Ämtli Ideen.xlsx»
+      const own = current.source && current.source.mimeType === XLSX && isOwnAemtliFile(current.source.name, camp.name);
+      const existing = own ? await getItemFresh(current.source!.id) : undefined;
       if (existing?.canEdit) {
         await uploadNewRevision(existing.id, xlsx);
       } else {
         const folder = await getItemFresh(current.data.folder.id);
         if (!folder.canAddChildren) return { ok: false, error: "Du darfst im Lager-Ordner keine Dateien anlegen." };
-        await uploadFile(folder.id, `Ämtliplan ${camp.name}.xlsx`, XLSX, Readable.from(xlsx));
+        await uploadFile(folder.id, aemtliFileName(camp.name), XLSX, Readable.from(xlsx));
       }
       revalidatePath(`/${camp.slug}`, "layout");
       return { ok: true as const };

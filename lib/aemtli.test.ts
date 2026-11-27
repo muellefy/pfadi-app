@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { campDays, parseAemtli, rotate, splitLines } from "./aemtli.ts";
+import { campDays, isOwnAemtliFile, parseAemtli, rotate, splitLines } from "./aemtli.ts";
 
 const days = ["2027-07-19", "2027-07-20", "2027-07-21"];
 
@@ -60,4 +60,11 @@ test("buildAemtliXlsx: what the app saves, it reads back", async () => {
   const plan = { chores: ["Abwaschen", "Holz"], days: rotate(days.slice(0, 2), ["Abwaschen", "Holz"], ["Füchse", "Biber"]) };
   const grid = await toGrid({ buffer: await buildAemtliXlsx("Ämtliplan Sola", plan), format: "xlsx" });
   assert.deepEqual(parseAemtli(grid), plan);
+});
+
+test("isOwnAemtliFile: only the app's own file, however the name is encoded", () => {
+  assert.equal(isOwnAemtliFile("Ämtliplan Sola 27.xlsx", "Sola 27"), true);
+  assert.equal(isOwnAemtliFile("A\u0308mtliplan Sola 27.xlsx", "Sola 27"), true);
+  assert.equal(isOwnAemtliFile("Ämtli Ideen.xlsx", "Sola 27"), false);
+  assert.equal(isOwnAemtliFile("Ämtliplan Pfila.xlsx", "Sola 27"), false);
 });

@@ -13,7 +13,7 @@ import { MENU_FILE, parseMenu, type MenuPlan } from "../menu";
 import { parseRecipes, RECIPES_SHEET, type Ingredient } from "../shopping";
 import type { BlockContent } from "../coach";
 import { getBlockContent } from "./ecampBlocks";
-import { AEMTLI_FILE, parseAemtli, type AemtliPlan } from "../aemtli";
+import { AEMTLI_FILE, isOwnAemtliFile, parseAemtli, type AemtliPlan } from "../aemtli";
 
 /** Every loader returns either data or a readable error, so one broken file never takes a whole page down. */
 export type Result<T> = { ok: true; data: T; source?: DriveItem } | { ok: false; error: string };
@@ -133,12 +133,12 @@ export const loadCoach = cache((camp: CampConfig) =>
 
 export type AemtliData = { plan: AemtliPlan | null; folder: DriveItem };
 
-/** The Ämtliplan: the newest «Ämtliplan» table in the camp's main folder, if there is one. */
+/** The Ämtliplan in the camp's main folder: the app's own file, else the newest «Ämtli…» table, if any. */
 export const loadAemtli = cache((camp: CampConfig) =>
   attempt<AemtliData>(async () => {
     const folder = await getItem(camp.drive.rootFolderId);
     const tables = (await listChildren(folder.id)).filter((f) => !f.isFolder && AEMTLI_FILE.test(f.name) && (f.mimeType === XLSX || f.mimeType === "application/vnd.google-apps.spreadsheet"));
-    tables.sort((a, b) => (b.modifiedTime ?? "").localeCompare(a.modifiedTime ?? ""));
+    tables.sort((a, b) => Number(isOwnAemtliFile(b.name, camp.name)) - Number(isOwnAemtliFile(a.name, camp.name)) || (b.modifiedTime ?? "").localeCompare(a.modifiedTime ?? ""));
     if (!tables[0]) return { data: { plan: null, folder } };
     const source = await getItem(tables[0].id);
     return { data: { plan: parseAemtli(await gridOf(source)), folder }, source };
